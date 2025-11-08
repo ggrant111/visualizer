@@ -1,0 +1,65 @@
+{
+  "name": "led-visualizer",
+  "version": "1.0.0",
+  "description": "Real-time audio visualization system for LED strips using DDP protocol",
+  "type": "module",
+  "main": "server.js",
+  "bin": "server-wrapper.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "pkg server-wrapper.js --targets node18-win-x64 --output dist/led-visualizer.exe",
+    "build:all": "pkg server-wrapper.js --targets node18-win-x64,node18-win-x86,node18-linux-x64,node18-macos-x64 --output dist/led-visualizer",
+    "build:nexe": "nexe server.js --target windows-x64 --output dist/led-visualizer.exe --resource public",
+    "build:nexe:latest": "nexe server.js --target windows-x64-latest --output dist/led-visualizer.exe --resource public"
+  },
+  "keywords": [
+    "led",
+    "led-strip",
+    "led-matrix",
+    "wled",
+    "visualization",
+    "audio-visualization",
+    "audio-reactive",
+    "audio-visualizer",
+    "ddp",
+    "ddp-protocol",
+    "butterchurn",
+    "milkdrop",
+    "real-time",
+    "rgb",
+    "rgb-led",
+    "ws2812",
+    "neopixel",
+    "led-controller",
+    "music-visualization",
+    "spectrum-analyzer",
+    "webgl",
+    "canvas",
+    "websocket",
+    "nodejs",
+    "javascript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1",
+    "nexe": "^4.0.0-rc.1"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "scripts": [
+      "server-wrapper.js",
+      "server.js"
+    ],
+    "outputPath": "dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

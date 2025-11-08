@@ -1,0 +1,30 @@
+{
+  "devices": [
+    {
+      "id": "example-device-1",
+      "name": "Example LED Strip",
+      "host": "192.168.1.100",
+      "port": 4048,
+      "enabled": false,
+      "posX": 0.5,
+      "posY": 0.5,
+      "scale": 1.0,
+      "width": 1.0,
+      "height": 1.0,
+      "rotation": 0,
+      "flipX": false,
+      "flipY": false,
+      "sampleRadius": 1,
+      "map": [
+        { "index": 1, "x": 0.0, "y": 0.5 },
+        { "index": 2, "x": 0.1, "y": 0.5 },
+        { "index": 3, "x": 0.2, "y": 0.5 },
+        { "index": 4, "x": 0.3, "y": 0.5 },
+        { "index": 5, "x": 0.4, "y": 0.5 }
+      ]
+    }
+  ],
+  "exported": "2024-01-01T00:00:00.000Z",
+  "version": "1.0"
+}
+
