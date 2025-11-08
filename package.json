@@ -10,12 +10,30 @@
   },
   "keywords": [
     "led",
-    "visualization",
-    "audio",
-    "ddp",
+    "led-strip",
+    "led-matrix",
     "wled",
+    "visualization",
+    "audio-visualization",
+    "audio-reactive",
+    "audio-visualizer",
+    "ddp",
+    "ddp-protocol",
     "butterchurn",
-    "milkdrop"
+    "milkdrop",
+    "real-time",
+    "rgb",
+    "rgb-led",
+    "ws2812",
+    "neopixel",
+    "led-controller",
+    "music-visualization",
+    "spectrum-analyzer",
+    "webgl",
+    "canvas",
+    "websocket",
+    "nodejs",
+    "javascript"
   ],
   "author": "",
   "license": "MIT",
@@ -26,4 +44,3 @@
     "node": ">=18.0.0"
   }
 }
-

@@ -505,4 +505,8 @@ Contributions welcome! Please:
 
 ## Support
 
-For issues, questions, or feature requests, please open an issue on GitHub.
+For issues, questions, or feature requests, please open an issue on [GitHub](https://github.com/ggrant111/visualizer/issues).
+
+## Repository Topics
+
+This repository is tagged with topics to help with discoverability. Key topics include: `led`, `wled`, `audio-visualization`, `led-strip`, `ddp`, `visualization`, `audio-reactive`, `music-visualization`, and more. See `GITHUB_TOPICS.md` for the complete list of suggested GitHub repository topics.
