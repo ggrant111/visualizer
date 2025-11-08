@@ -5,6 +5,8 @@ import { WebSocketServer } from 'ws';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { exec } from 'node:child_process';
+import { platform } from 'node:os';
 
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || '8137', 10);
 
@@ -167,6 +169,26 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(HTTP_PORT, () => {
-  console.log(`UI: http://localhost:${HTTP_PORT}`);
+  const serverUrl = `http://localhost:${HTTP_PORT}`;
+  console.log(`UI: ${serverUrl}`);
   console.log(`WS connections must specify ?host=IP&port=4048`);
+  
+  // Automatically open browser
+  const urlToOpen = serverUrl;
+  const osPlatform = platform();
+  let command;
+  
+  if (osPlatform === 'win32') {
+    command = `start "" "${urlToOpen}"`;
+  } else if (osPlatform === 'darwin') {
+    command = `open "${urlToOpen}"`;
+  } else {
+    command = `xdg-open "${urlToOpen}"`;
+  }
+  
+  exec(command, (error) => {
+    if (error) {
+      console.warn('Could not automatically open browser:', error.message);
+    }
+  });
 });

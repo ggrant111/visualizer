@@ -72,17 +72,7 @@ export function renderAudioVisualizer(
   analyser.getByteFrequencyData(freqData);
   analyser.getByteTimeDomainData(waveData);
 
-  // Debug: log occasionally to verify data is being populated
-  if (Math.random() < 0.01) {
-    // Log occasionally to avoid spam
-    const sampleSum = freqData.slice(0, 10).reduce((a, b) => a + b, 0);
-    console.log("Audio data check:", {
-      sampleSum,
-      sensitivity,
-      smoothing: analyser.smoothingTimeConstant,
-      hasData: sampleSum > 0,
-    });
-  }
+  // Debug: check occasionally to verify data is being populated (logging removed)
 
   const sens = sensitivity;
   // Calculate audio intensity for audio-reactive effects

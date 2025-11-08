@@ -5253,9 +5253,8 @@
       try {
         wakeLock = await navigator.wakeLock.request("screen");
         wakeLock.addEventListener("release", () => {
-          console.log("Wake Lock released");
+          // Wake Lock released
         });
-        console.log("Wake Lock acquired - device will stay awake");
       } catch (err) {
         console.warn("Wake Lock not available:", err.message);
       }
@@ -5269,7 +5268,6 @@
         .release()
         .then(() => {
           wakeLock = null;
-          console.log("Wake Lock released manually");
         })
         .catch((err) => {
           console.warn("Error releasing Wake Lock:", err);

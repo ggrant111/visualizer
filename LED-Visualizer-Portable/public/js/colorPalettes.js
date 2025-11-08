@@ -148,19 +148,11 @@ export async function loadCustomPalettes() {
           }
           // Save to localStorage for offline use
           saveCustomPalettes();
-          console.log(
-            `Loaded ${
-              Object.keys(customPalettes).length
-            } custom palette(s) from customPalettes.json`
-          );
           return;
         }
       }
     } catch (fetchError) {
       // JSON file doesn't exist or failed to load, continue to localStorage
-      console.log(
-        "customPalettes.json not found or failed to load, trying localStorage"
-      );
     }
 
     // Fallback to localStorage if JSON file doesn't exist or has no palettes
@@ -178,11 +170,6 @@ export async function loadCustomPalettes() {
           }
         }
       }
-      console.log(
-        `Loaded ${
-          Object.keys(customPalettes).length
-        } custom palette(s) from localStorage`
-      );
     }
   } catch (e) {
     console.warn("Failed to load custom palettes:", e);

@@ -21,22 +21,17 @@ export async function loadDevices() {
         ) {
           devices = data.devices.map((d) => ({ ...d, ws: null }));
           saveDevices(); // Save to localStorage for future use
-          console.log(`Loaded ${devices.length} device(s) from devices.json`);
           return devices;
         }
       }
     } catch (fetchError) {
       // JSON file doesn't exist or failed to load, continue to localStorage
-      console.log(
-        "devices.json not found or failed to load, trying localStorage"
-      );
     }
 
     // Fallback to localStorage if JSON file doesn't exist or has no devices
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       devices = JSON.parse(stored);
-      console.log(`Loaded ${devices.length} device(s) from localStorage`);
     } else {
       devices = [];
     }

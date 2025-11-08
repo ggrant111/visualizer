@@ -61,17 +61,10 @@ async function initButterchurn() {
         try {
           const butterchurnModule = await import(url);
           butterchurn = butterchurnModule.default || butterchurnModule;
-          console.log('Successfully loaded butterchurn from:', url);
           
           // Try to get version info
           try {
-            if (butterchurn && butterchurn.version) {
-              console.log('Butterchurn version:', butterchurn.version);
-            } else if (butterchurnModule && butterchurnModule.version) {
-              console.log('Butterchurn version:', butterchurnModule.version);
-            } else {
-              console.log('Butterchurn version: unknown (check package.json)');
-            }
+            // Version info available but not logged
           } catch (vError) {
             // Version info not available
           }
@@ -94,45 +87,12 @@ async function initButterchurn() {
         try {
           const presetsModule = await import(url);
           butterchurnPresets = presetsModule.default || presetsModule;
-          console.log('Successfully loaded butterchurn-presets from:', url);
           
           // Try to get version info
           try {
-            if (butterchurnPresets && butterchurnPresets.version) {
-              console.log('Butterchurn-presets version:', butterchurnPresets.version);
-            } else if (presetsModule && presetsModule.version) {
-              console.log('Butterchurn-presets version:', presetsModule.version);
-            } else {
-              // Extract version from URL or module
-              const versionMatch = url.match(/@(\d+\.\d+\.\d+)/);
-              if (versionMatch) {
-                console.log('Butterchurn-presets version (from URL):', versionMatch[1]);
-              } else {
-                console.log('Butterchurn-presets version: latest (unknown)');
-              }
-            }
+            // Version info available but not logged
           } catch (vError) {
             // Version info not available
-          }
-          
-          // Log all available presets from CDN immediately after loading
-          try {
-            const allPresets = butterchurnPresets.getPresets();
-            const allPresetNames = Object.keys(allPresets);
-            console.log('\n' + '='.repeat(60));
-            console.log('📦 ALL BUTTERCHURN PRESETS FROM CDN');
-            console.log('='.repeat(60));
-            console.log(`Total presets available: ${allPresetNames.length}`);
-            console.log('\n📋 All preset names (alphabetically sorted):');
-            const sortedNames = [...allPresetNames].sort();
-            sortedNames.forEach((name, index) => {
-              console.log(`  ${(index + 1).toString().padStart(3, ' ')}. ${name}`);
-            });
-            console.log('\n📋 All preset names (raw array for copy/paste):');
-            console.log(allPresetNames);
-            console.log('='.repeat(60) + '\n');
-          } catch (logError) {
-            console.warn('Could not log presets:', logError);
           }
           
           break;
