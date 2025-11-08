@@ -1,0 +1,29 @@
+{
+  "name": "led-visualizer",
+  "version": "1.0.0",
+  "description": "Real-time audio visualization system for LED strips using DDP protocol",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "led",
+    "visualization",
+    "audio",
+    "ddp",
+    "wled",
+    "butterchurn",
+    "milkdrop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

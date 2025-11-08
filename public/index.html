@@ -1,0 +1,5537 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>Multi‑Device Excel → LED Mapping (DDP + Video/Lottie/Audio)</title>
+<style>
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #333;
+    --border-color: #444;
+    --text-primary: #fff;
+    --text-secondary: #ccc;
+    --accent: #4a9eff;
+    --accent-hover: #6bb0ff;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  body {
+    font: 14px system-ui, sans-serif;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: grid-template-columns 0.3s ease;
+    overflow: hidden;
+  }
+
+  body.panel-collapsed {
+    grid-template-columns: 1fr 0px;
+  }
+
+  #left {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  #panelToggle {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 100;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    box-shadow: var(--card-shadow);
+  }
+
+  #panelToggle:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+  }
+
+  body.panel-collapsed #panelToggle {
+    right: 12px;
+  }
+
+  #right {
+    border-left: 1px solid var(--border-color);
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg-secondary);
+    transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    min-width: 0;
+  }
+
+  body.panel-collapsed #right {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  canvas {
+    flex: 1;
+    display: block;
+    background: #000;
+  }
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  label {
+    display: block;
+    margin: 8px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-tertiary);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--accent-hover);
+    transform: scale(1.1);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  input[type="range"]::-moz-range-thumb:hover {
+    background: var(--accent-hover);
+    transform: scale(1.1);
+  }
+
+  /* Toggle Switch Styles */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: 0.3s;
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+  }
+
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background-color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  .toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.3);
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    cursor: pointer;
+  }
+
+  .toggle-label-text {
+    flex: 1;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* Card Styles */
+  .card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Palette Card Styles */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .palette-item {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .palette-item:hover {
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+
+  .palette-item.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.3);
+  }
+
+  /* Effect Card Styles */
+  .effect-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .effect-item {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+  }
+
+  .effect-item:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  .effect-item.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  /* Button Styles */
+  button {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="file"] {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* Port input should be smaller */
+  input[placeholder="4048"],
+  input[id*="port-"],
+  input#newPort {
+    flex: 0 0 80px !important;
+    max-width: 80px !important;
+    min-width: 80px !important;
+    width: 80px !important;
+  }
+
+  select:focus,
+  input[type="text"]:focus,
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+  }
+
+  pre {
+    background: #111;
+    color: #0f0;
+    padding: 12px;
+    overflow: auto;
+    max-height: 180px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: stretch;
+  }
+
+  .row > * {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Ensure inputs in rows don't overflow (except port inputs which have fixed width) */
+  .row
+    input[type="text"]:not([id*="port-"]):not([placeholder="4048"]):not(
+      #newPort
+    ),
+  .row
+    input[type="number"]:not([id*="port-"]):not([placeholder="4048"]):not(
+      #newPort
+    ) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .devcard {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    background: var(--bg-primary);
+    transition: border-color 0.3s ease;
+    overflow: hidden;
+  }
+
+  .devcard .row {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .devcard input[type="text"],
+  .devcard input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .devcard.connected {
+    border-color: #4caf50;
+    border-width: 2px;
+  }
+
+  .devcard.disconnected {
+    border-color: #f44336;
+    border-width: 2px;
+  }
+
+  .device-status-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid;
+  }
+
+  .device-status-btn.connected {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4caf50;
+    color: #4caf50;
+  }
+
+  .device-status-btn.connected:hover {
+    background: rgba(76, 175, 80, 0.2);
+  }
+
+  .device-status-btn.disconnected {
+    background: rgba(244, 67, 54, 0.1);
+    border-color: #f44336;
+    color: #f44336;
+  }
+
+  .device-status-btn.disconnected:hover {
+    background: rgba(244, 67, 54, 0.2);
+  }
+
+  summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  small.mono {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    opacity: 0.8;
+    color: var(--text-secondary);
+  }
+
+  /* Section Spacing */
+  .section {
+    margin-bottom: 24px;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    body {
+      grid-template-columns: 1fr;
+    }
+
+    #right {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 400px;
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    body.panel-expanded #right {
+      transform: translateX(0);
+    }
+  }
+</style>
+
+<div id="left">
+  <button id="panelToggle" title="Toggle Control Panel">☰</button>
+  <canvas id="stage" width="800" height="450"></canvas>
+</div>
+
+<div id="right">
+  <h3>Color Source</h3>
+  <div class="row" style="margin-bottom: 6px">
+    <button id="useCanvasSource">Use Canvas Source</button>
+    <button id="useScreenCapture">Use Screen/Window Capture</button>
+  </div>
+  <div class="row" style="margin-bottom: 6px">
+    <button id="stopSource">Stop Source</button>
+  </div>
+
+  <h3>Source</h3>
+  <label>
+    Type:
+    <select id="srcType">
+      <option value="effect">Built-in effect</option>
+      <option value="video">Video file</option>
+      <option value="lottie">Lottie JSON</option>
+      <option value="audio">Audio visualizer</option>
+    </select>
+  </label>
+
+  <div id="srcVideoControls" style="display: none; margin-bottom: 6px">
+    <input id="videoFile" type="file" accept="video/*" />
+    <div class="row">
+      <label
+        >Fit
+        <select id="videoFit">
+          <option value="contain">Contain</option>
+          <option value="cover">Cover</option>
+          <option value="stretch">Stretch</option>
+        </select>
+      </label>
+      <label
+        >Speed <input id="videoSpeed" type="number" step="0.1" value="1.0"
+      /></label>
+    </div>
+    <div class="row">
+      <button id="videoPlay">Play/Pause</button>
+    </div>
+    <div style="display: flex; gap: 16px; margin-top: 8px">
+      <label class="toggle-label">
+        <span class="toggle-label-text">Loop</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="videoLoop" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </label>
+      <label class="toggle-label">
+        <span class="toggle-label-text">Mute</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="videoMute" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </label>
+    </div>
+  </div>
+
+  <div id="srcLottieControls" style="display: none; margin-bottom: 6px">
+    <input id="lottieFile" type="file" accept=".json,application/json" />
+    <div class="row">
+      <label
+        >Speed <input id="lottieSpeed" type="number" step="0.1" value="1.0"
+      /></label>
+    </div>
+    <label class="toggle-label" style="margin-top: 8px">
+      <span class="toggle-label-text">Loop</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="lottieLoop" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </label>
+  </div>
+
+  <div id="srcEffectControls" style="display: block; margin-bottom: 6px">
+    <div class="card section">
+      <div class="card-header">
+        <h4 class="card-title">Effect Style</h4>
+      </div>
+      <div class="card-content">
+        <select id="effectStyle">
+          <option value="plasma">Plasma</option>
+          <option value="stars">Stars</option>
+          <option value="waves">Waves</option>
+          <option value="kaleidoscope">Kaleidoscope</option>
+          <option value="butterchurn">Butterchurn (Milkdrop)</option>
+          <option value="spiral">Spiral</option>
+          <option value="mandala">Mandala</option>
+          <option value="hexagons">Hexagons</option>
+          <option value="fan">Fan</option>
+          <option value="bars">Bars</option>
+          <option value="fullBars">Full Bars</option>
+          <option value="scrollingBars">Scrolling Bars</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card section">
+      <div class="card-header">
+        <h4 class="card-title">Color Palette</h4>
+        <button
+          id="editEffectPalette"
+          style="padding: 4px 12px; font-size: 12px"
+        >
+          Edit
+        </button>
+      </div>
+      <div class="card-content">
+        <select id="effectPalette">
+          <option value="rainbow" selected>Rainbow</option>
+          <option value="fire">Fire</option>
+          <option value="ocean">Ocean</option>
+          <option value="neon">Neon</option>
+          <option value="pastel">Pastel</option>
+          <option value="monochrome">Monochrome</option>
+          <option value="sunset">Sunset</option>
+          <option value="forest">Forest</option>
+          <option value="ice">Ice</option>
+          <option value="lava">Lava</option>
+          <option value="purple">Purple</option>
+          <option value="cyber">Cyber</option>
+        </select>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Gradient</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effectPaletteGradient" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      </div>
+    </div>
+
+    <div id="effectParams" style="margin-top: 6px">
+      <!-- Parameters will be shown/hidden based on selected effect -->
+    </div>
+  </div>
+
+  <!-- Shared Palette Editor -->
+  <div
+    id="paletteEditor"
+    style="
+      display: none;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #222;
+    "
+  >
+    <div style="margin-bottom: 10px">
+      <strong>Palette Editor</strong>
+      <button id="closePaletteEditor" style="float: right; padding: 2px 8px">
+        ×
+      </button>
+    </div>
+    <div
+      id="paletteColors"
+      style="
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+        min-height: 40px;
+      "
+    >
+      <!-- Color circles will be inserted here -->
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+      <button id="addPaletteColor" style="padding: 4px 8px">+ Add Color</button>
+      <button id="saveCustomPalette" style="padding: 4px 8px">
+        Save as Custom
+      </button>
+      <input
+        type="text"
+        id="customPaletteName"
+        placeholder="Palette name"
+        style="
+          padding: 4px;
+          background: #333;
+          color: #fff;
+          border: 1px solid #555;
+          border-radius: 2px;
+        "
+      />
+      <button
+        id="deleteCustomPalette"
+        style="
+          padding: 4px 8px;
+          background: #a00;
+          color: #fff;
+          border: 1px solid #555;
+          border-radius: 2px;
+        "
+      >
+        Delete Palette
+      </button>
+      <span
+        id="paletteEditorStatus"
+        style="color: #0f0; font-size: 12px"
+      ></span>
+    </div>
+  </div>
+
+  <!-- Template Loader Modal -->
+  <div
+    id="templateModal"
+    style="
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <div
+      style="
+        background: #222;
+        border: 1px solid #555;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      "
+    >
+      <div
+        style="
+          margin-bottom: 15px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <strong style="font-size: 18px">Load Template</strong>
+        <button
+          id="closeTemplateModal"
+          style="
+            padding: 4px 12px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          ×
+        </button>
+      </div>
+
+      <div style="margin-bottom: 15px">
+        <label style="display: block; margin-bottom: 8px">Template Type:</label>
+        <select
+          id="templateType"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+          "
+        >
+          <option value="linear_strip">Linear Strip</option>
+          <option value="circle">Circle</option>
+          <option value="grid">Grid / Matrix</option>
+        </select>
+      </div>
+
+      <!-- Linear Strip Options -->
+      <div id="linearStripOptions" style="margin-bottom: 15px">
+        <label style="display: block; margin-bottom: 8px">Total LEDs:</label>
+        <input
+          type="number"
+          id="linearStripCount"
+          min="1"
+          value="50"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+          "
+        />
+        <small style="color: #aaa; display: block; margin-top: 4px"
+          >Creates a horizontal line of LEDs</small
+        >
+      </div>
+
+      <!-- Circle Options -->
+      <div id="circleOptions" style="margin-bottom: 15px; display: none">
+        <label style="display: block; margin-bottom: 8px"
+          >LEDs per Circle (comma-separated):</label
+        >
+        <input
+          type="text"
+          id="circleSegments"
+          placeholder="300,200,500"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+          "
+        />
+        <small style="color: #aaa; display: block; margin-top: 4px"
+          >Enter LED counts for each concentric circle (e.g., "300,200,500"
+          creates 3 circles with 300, 200, and 500 LEDs)</small
+        >
+      </div>
+
+      <!-- Grid/Matrix Options -->
+      <div id="gridOptions" style="margin-bottom: 15px; display: none">
+        <label style="display: block; margin-bottom: 8px"
+          >Number of Rows:</label
+        >
+        <input
+          type="number"
+          id="gridRows"
+          min="1"
+          value="10"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            margin-bottom: 10px;
+          "
+        />
+        <label style="display: block; margin-bottom: 8px"
+          >LEDs per Row (comma-separated or single number):</label
+        >
+        <input
+          type="text"
+          id="gridRowCounts"
+          placeholder="50,50,50 or 50"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+          "
+        />
+        <small style="color: #aaa; display: block; margin-top: 4px"
+          >Enter LED count for each row (e.g., "50,50,50" for 3 rows with 50
+          LEDs each, or "50" for all rows)</small
+        >
+      </div>
+
+      <div
+        style="
+          margin-top: 20px;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+        "
+      >
+        <button
+          id="cancelTemplate"
+          style="
+            padding: 8px 16px;
+            background: #444;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          Cancel
+        </button>
+        <button
+          id="applyTemplate"
+          style="
+            padding: 8px 16px;
+            background: #0066cc;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          Apply Template
+        </button>
+      </div>
+      <div
+        id="templateModalStatus"
+        style="margin-top: 10px; color: #f00; font-size: 12px; min-height: 20px"
+      ></div>
+    </div>
+  </div>
+
+  <div id="srcAudioControls" style="display: none; margin-bottom: 6px">
+    <div class="row">
+      <label
+        >Source
+        <select id="audioSource">
+          <option value="microphone">Microphone</option>
+          <option value="screen">Screen/Tab Audio</option>
+        </select>
+      </label>
+    </div>
+    <div class="row" id="audioInputRow">
+      <label
+        >Input Device
+        <select id="audioInput"></select
+      ></label>
+    </div>
+    <div class="row">
+      <label
+        >Style
+        <select id="audioStyle">
+          <option value="bars">Bars</option>
+          <option value="wave">Waveform</option>
+          <option value="radial">Radial</option>
+          <option value="blobs">Blobs</option>
+          <option value="shockwave">Shockwave</option>
+          <option value="spectrumCircle">Spectrum Circle</option>
+          <option value="particles">Particles</option>
+          <option value="pulseRings">Pulse Rings</option>
+          <option value="matrix">Matrix</option>
+          <option value="oscilloscope">Oscilloscope</option>
+          <option value="audioPlasma">Audio Plasma</option>
+          <option value="audioStars">Audio Stars</option>
+          <option value="audioWaves">Audio Waves</option>
+          <option value="audioSpiral">Audio Spiral</option>
+          <option value="audioHexagons">Audio Hexagons</option>
+          <option value="synthBars">Synth Bars</option>
+          <option value="sunflower">Sunflower</option>
+          <option value="frostFire">Frost Fire</option>
+          <option value="butterchurn">Butterchurn (Milkdrop)</option>
+          <option value="audioFan">Audio Fan</option>
+          <option value="audioBars">Audio Bars</option>
+          <option value="audioFullBars">Audio Full Bars</option>
+          <option value="audioScrollingBars">Audio Scrolling Bars</option>
+        </select>
+      </label>
+      <label
+        >FFT
+        <select id="fftSize">
+          <option>512</option>
+          <option>1024</option>
+          <option>2048</option>
+          <option selected>4096</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label
+        >Palette
+        <select id="audioPalette">
+          <option value="rainbow" selected>Rainbow</option>
+          <option value="fire">Fire</option>
+          <option value="ocean">Ocean</option>
+          <option value="neon">Neon</option>
+          <option value="pastel">Pastel</option>
+          <option value="monochrome">Monochrome</option>
+          <option value="sunset">Sunset</option>
+          <option value="forest">Forest</option>
+          <option value="ice">Ice</option>
+          <option value="lava">Lava</option>
+          <option value="purple">Purple</option>
+          <option value="cyber">Cyber</option>
+        </select>
+      </label>
+      <button id="editAudioPalette" style="margin-left: 10px; padding: 4px 8px">
+        Edit Palette
+      </button>
+    </div>
+    <label class="toggle-label" style="margin-top: 8px">
+      <span class="toggle-label-text">Gradient</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="audioPaletteGradient" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </label>
+    <div class="row">
+      <label
+        >Smoothing
+        <input
+          id="smoothing"
+          type="range"
+          min="0"
+          max="0.95"
+          step="0.01"
+          value="0.7"
+      /></label>
+      <label
+        >Sensitivity
+        <input
+          id="sensitivity"
+          type="range"
+          min="0.2"
+          max="4"
+          step="0.05"
+          value="1.2"
+      /></label>
+    </div>
+    <small class="mono"
+      >Tip: Use "Screen/Tab Audio" to capture audio from browser tabs or system
+      audio. For microphone, select a "Stereo Mix" / loopback device if your OS
+      exposes one.</small
+    >
+    <div class="row" style="margin-top: 6px">
+      <button id="audioStart">Start</button>
+      <button id="audioStop">Stop</button>
+    </div>
+  </div>
+
+  <h3>Devices</h3>
+  <div class="card section" style="margin-bottom: 16px">
+    <div class="card-header">
+      <h4 class="card-title">Add New Device</h4>
+    </div>
+    <div class="card-content">
+      <div class="row">
+        <input id="newName" placeholder="Device name (e.g., Living Room)" />
+      </div>
+      <div class="row">
+        <input id="newHost" placeholder="WLED IP (e.g., 192.168.1.50)" />
+        <input id="newPort" placeholder="4048" value="4048" />
+      </div>
+      <div class="row">
+        <button id="addDevice">Add Device</button>
+      </div>
+      <label class="toggle-label" style="margin-top: 8px">
+        <span class="toggle-label-text">Save to devices.json</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="saveToFile" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </label>
+    </div>
+  </div>
+  <div class="row">
+    <button id="exportDevices">Export All to JSON</button>
+    <button id="importDevices">Import from JSON</button>
+    <button id="saveDevicesToFile">Save All to devices.json</button>
+  </div>
+
+  <div id="devices"></div>
+
+  <h3 style="margin-top: 12px">Global</h3>
+  <label>FPS: <input id="fps" type="number" value="45" /></label>
+  <label class="toggle-label" style="margin-top: 8px">
+    <span class="toggle-label-text">Show LED Mask</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="showLedMask" />
+      <span class="toggle-slider"></span>
+    </label>
+  </label>
+  <label id="maskOpacityLabel" style="margin-left: 10px; display: none">
+    Mask Opacity:
+    <input
+      type="range"
+      id="maskOpacity"
+      min="0"
+      max="100"
+      value="90"
+      style="width: 100px"
+    />
+    <span id="maskOpacityValue">90%</span>
+  </label>
+  <pre id="log"></pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+  // Load Lottie with error handling - use a more reliable CDN path
+  (function () {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js";
+    script.type = "text/javascript";
+    script.crossOrigin = "anonymous";
+    script.onerror = function () {
+      console.warn(
+        "Failed to load Lottie from CDN, Lottie features will be disabled"
+      );
+      window.lottie = null;
+    };
+    document.head.appendChild(script);
+  })();
+</script>
+<script type="module">
+  // Import modules
+  import {
+    $,
+    createLogger,
+    hslToRgb,
+    drawFitted,
+    uid,
+    download,
+    pickFile,
+  } from "./js/utils.js";
+  import {
+    getPaletteColor,
+    colorPalettes,
+    paletteToArray,
+    saveCustomPalette,
+    getCustomPaletteNames,
+    getCustomPalette,
+    loadCustomPalettes,
+  } from "./js/colorPalettes.js";
+  import { AudioManager } from "./js/audioManager.js";
+  import { renderAudioVisualizer } from "./js/audioVisualizers.js";
+  import {
+    renderEffect as renderEffectVisualizer,
+    getButterchurnPresets,
+  } from "./js/effectVisualizers.js";
+  import {
+    initDevices,
+    getDevices,
+    renderDevicesUI,
+    addDevice as addDeviceFunc,
+    deleteDevice,
+    connectDevice as connectDeviceFunc,
+    saveDevices,
+    parseCsvToMap,
+    parseExcelToMap,
+    exportDevicesToJSON,
+    importDevicesFromJSON,
+    saveDevicesToFile,
+    generateMappingFromTemplate,
+  } from "./js/deviceManager.js";
+  import { config } from "./js/config.js";
+  import { CanvasSource, ScreenSource } from "./js/colorSources.js";
+  import { scaleMapping } from "./js/mappingScaler.js";
+
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const log = createLogger("log");
+
+  // ===== Panel Toggle =====
+  const $panelToggle = $("panelToggle");
+  $panelToggle.addEventListener("click", () => {
+    document.body.classList.toggle("panel-collapsed");
+    const isCollapsed = document.body.classList.contains("panel-collapsed");
+    $panelToggle.textContent = isCollapsed ? "☰" : "✕";
+    $panelToggle.title = isCollapsed
+      ? "Show Control Panel"
+      : "Hide Control Panel";
+  });
+
+  // Initialize audio manager
+  const audioManager = new AudioManager({
+    fftSize: 1024,
+    smoothing: 0.7,
+    sensitivity: 1.2,
+  });
+
+  // Initialize devices from module
+  let devices = [];
+
+  // Load devices asynchronously on page load
+  (async () => {
+    devices = await initDevices();
+    renderDevicesUILocal();
+  })();
+
+  // ===== Color Source Controller =====
+  const BASE_AUTHORING_WIDTH = 1920;
+  const BASE_AUTHORING_HEIGHT = 1080;
+
+  let activeColorSource = null;
+  let canvasSource = null;
+  let screenSource = null;
+  let deviceScaledMappings = new Map(); // Cache scaled mappings per device
+
+  // Initialize canvas source (always available)
+  canvasSource = new CanvasSource(canvas);
+
+  // Create screen source
+  screenSource = new ScreenSource({
+    width: 1280,
+    height: 720,
+    frameRate: 30,
+    onSizeChange: (size) => {
+      // Log screen capture size change (using direct 1:1 mapping, no recomputation needed)
+      log(`Screen capture size: ${size.width}x${size.height}`);
+    },
+  });
+
+  // Start with canvas source by default
+  async function startCanvasSource() {
+    if (activeColorSource) {
+      activeColorSource.stop();
+    }
+    activeColorSource = canvasSource;
+    await activeColorSource.start();
+    deviceScaledMappings.clear(); // Clear cache
+    log("Using Canvas Source");
+  }
+
+  async function startScreenCapture() {
+    if (activeColorSource) {
+      activeColorSource.stop();
+    }
+    try {
+      activeColorSource = screenSource;
+      await activeColorSource.start();
+      deviceScaledMappings.clear(); // Clear cache, using direct 1:1 mapping
+      log("Screen/Window capture started");
+    } catch (error) {
+      log(`Failed to start screen capture: ${error.message}`);
+      activeColorSource = null;
+    }
+  }
+
+  function stopSource() {
+    if (activeColorSource) {
+      activeColorSource.stop();
+      activeColorSource = null;
+      deviceScaledMappings.clear();
+      log("Source stopped");
+    }
+  }
+
+  function recomputeScaledMappings() {
+    // No longer needed - we use direct 1:1 mapping from canvas to screen capture
+    // Keep function for compatibility but clear any cached mappings
+    deviceScaledMappings.clear();
+  }
+
+  // Apply device transforms (posX, posY, scale, rotation, flip) to a mapping
+  // Returns a new mapping with transforms applied (still in normalized 0-1 base coordinates)
+  function applyTransformsToMapping(dev, mapping) {
+    const posX = dev.posX ?? 0.5;
+    const posY = dev.posY ?? 0.5;
+    const scale = dev.scale ?? 1;
+    const width = dev.width ?? scale;
+    const height = dev.height ?? scale;
+    const rotDeg = dev.rotation || 0;
+    const flipX = dev.flipX ? -1 : 1;
+    const flipY = dev.flipY ? -1 : 1;
+    const ang = (rotDeg * Math.PI) / 180;
+    const cosA = Math.cos(ang);
+    const sinA = Math.sin(ang);
+
+    return mapping.map((p) => {
+      // Start from normalized coordinates (0-1)
+      let x = p.x - 0.5;
+      let y = p.y - 0.5;
+
+      // Apply flip
+      x *= flipX;
+      y *= flipY;
+
+      // Apply rotation
+      const xr = x * cosA - y * sinA;
+      const yr = x * sinA + y * cosA;
+
+      // Apply scale
+      const xs = xr * width;
+      const ys = yr * height;
+
+      // Apply position offset
+      const xn = posX + xs;
+      const yn = posY + ys;
+
+      // Return as normalized coordinates (0-1)
+      return {
+        index: p.index,
+        x: Math.max(0, Math.min(1, xn)),
+        y: Math.max(0, Math.min(1, yn)),
+        radius: p.radius,
+      };
+    });
+  }
+
+  // Wire up UI buttons
+  $("useCanvasSource").addEventListener("click", () => {
+    startCanvasSource();
+  });
+
+  $("useScreenCapture").addEventListener("click", () => {
+    startScreenCapture();
+  });
+
+  $("stopSource").addEventListener("click", () => {
+    stopSource();
+  });
+
+  // Start with canvas source on page load
+  startCanvasSource();
+
+  // ===== Interactive Mapping Transform Handles =====
+  let activeTransform = null; // {deviceId, handleType, startX, startY, startPosX, startPosY, startScale, startWidth, startHeight, startRotation, centerX, centerY}
+  let isDragging = false;
+  const HANDLE_SIZE = 8; // pixels
+  const HANDLE_HIT_RADIUS = 12; // pixels
+  const ROTATION_HANDLE_DISTANCE = 40; // pixels from center
+
+  // Convert canvas coordinates to normalized coordinates (0-1)
+  // Screen capture now fills canvas (cover mode), so coordinates map directly
+  function canvasToNormalized(canvasX, canvasY) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (canvasX - rect.left) / rect.width;
+    const mouseY = (canvasY - rect.top) / rect.height;
+
+    // Screen capture now fills the canvas completely (cover mode)
+    // Canvas coordinates map directly to normalized coordinates (0-1)
+    // The video may be cropped, but the mapping aligns with what's displayed
+    return {
+      x: Math.max(0, Math.min(1, mouseX)),
+      y: Math.max(0, Math.min(1, mouseY)),
+    };
+  }
+
+  // Convert normalized coordinates back to base authoring coordinates when using screen capture
+  // With direct 1:1 mapping, canvas coordinates map directly to base coordinates
+  function normalizedToBaseAuthoring(normX, normY, sourceWidth, sourceHeight) {
+    // Direct 1:1 mapping - canvas coordinates = base coordinates
+    // No scaling transformation needed
+    return { x: normX, y: normY };
+  }
+
+  // Calculate bounding box from sample points
+  function getBoundingBox(pts) {
+    if (!pts || pts.length === 0) return null;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const [x, y] of pts) {
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      centerX: (minX + maxX) / 2,
+      centerY: (minY + maxY) / 2,
+    };
+  }
+
+  // Get transform handles for a bounding box
+  function getTransformHandles(bbox) {
+    if (!bbox) return null;
+    const { x, y, width, height, centerX, centerY } = bbox;
+    const rotX = centerX;
+    const rotY = centerY - ROTATION_HANDLE_DISTANCE;
+
+    return {
+      // Corners
+      topLeft: { x, y },
+      topRight: { x: x + width, y },
+      bottomLeft: { x, y: y + height },
+      bottomRight: { x: x + width, y: y + height },
+      // Edges
+      top: { x: centerX, y },
+      bottom: { x: centerX, y: y + height },
+      left: { x, y: centerY },
+      right: { x: x + width, y: centerY },
+      // Center
+      center: { x: centerX, y: centerY },
+      // Rotation
+      rotation: { x: rotX, y: rotY },
+    };
+  }
+
+  // Check if point is near a handle
+  function getHandleAt(x, y, handles) {
+    if (!handles) return null;
+    for (const [handleType, handle] of Object.entries(handles)) {
+      const dx = x - handle.x;
+      const dy = y - handle.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= HANDLE_HIT_RADIUS) {
+        return handleType;
+      }
+    }
+    return null;
+  }
+
+  // Draw transform handles
+  function drawTransformHandles(ctx, handles) {
+    if (!handles) return;
+
+    ctx.save();
+    ctx.strokeStyle = "#00ff00";
+    ctx.fillStyle = "#00ff00";
+    ctx.lineWidth = 2;
+
+    // Draw bounding box
+    const bbox = {
+      x: handles.topLeft.x,
+      y: handles.topLeft.y,
+      width: handles.topRight.x - handles.topLeft.x,
+      height: handles.bottomLeft.y - handles.topLeft.y,
+    };
+    ctx.strokeRect(bbox.x - 1, bbox.y - 1, bbox.width + 2, bbox.height + 2);
+
+    // Draw corner handles
+    const corners = ["topLeft", "topRight", "bottomLeft", "bottomRight"];
+    for (const corner of corners) {
+      const h = handles[corner];
+      ctx.fillRect(
+        h.x - HANDLE_SIZE / 2,
+        h.y - HANDLE_SIZE / 2,
+        HANDLE_SIZE,
+        HANDLE_SIZE
+      );
+    }
+
+    // Draw edge handles
+    const edges = ["top", "bottom", "left", "right"];
+    for (const edge of edges) {
+      const h = handles[edge];
+      ctx.fillRect(
+        h.x - HANDLE_SIZE / 2,
+        h.y - HANDLE_SIZE / 2,
+        HANDLE_SIZE,
+        HANDLE_SIZE
+      );
+    }
+
+    // Draw center handle
+    ctx.fillStyle = "#ffff00";
+    ctx.fillRect(
+      handles.center.x - HANDLE_SIZE / 2,
+      handles.center.y - HANDLE_SIZE / 2,
+      HANDLE_SIZE,
+      HANDLE_SIZE
+    );
+
+    // Draw rotation handle
+    ctx.strokeStyle = "#00ffff";
+    ctx.beginPath();
+    ctx.moveTo(handles.center.x, handles.center.y);
+    ctx.lineTo(handles.rotation.x, handles.rotation.y);
+    ctx.stroke();
+    ctx.fillStyle = "#00ffff";
+    ctx.beginPath();
+    ctx.arc(
+      handles.rotation.x,
+      handles.rotation.y,
+      HANDLE_SIZE / 2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // Update device transform based on handle drag
+  function updateDeviceTransform(
+    deviceId,
+    handleType,
+    deltaX,
+    deltaY,
+    startBbox
+  ) {
+    const dev = devices.find((d) => d.id === deviceId);
+    if (!dev) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Convert pixel deltas to normalized deltas
+    const deltaXNorm = deltaX / w;
+    const deltaYNorm = deltaY / h;
+
+    if (handleType === "center") {
+      // Move entire mapping
+      dev.posX = Math.max(0, Math.min(1, dev.posX + deltaXNorm));
+      dev.posY = Math.max(0, Math.min(1, dev.posY + deltaYNorm));
+    } else if (handleType === "rotation") {
+      // Calculate angle from center to current mouse position
+      const centerX = startBbox.centerX;
+      const centerY = startBbox.centerY;
+      const startRotX = centerX;
+      const startRotY = centerY - ROTATION_HANDLE_DISTANCE;
+      const currentX = startRotX + deltaX;
+      const currentY = startRotY + deltaY;
+      const angle = Math.atan2(currentY - centerY, currentX - centerX);
+      // Convert to degrees (0 = up, 90 = right, etc.) and add initial rotation
+      let deg = ((angle * 180) / Math.PI + 90) % 360;
+      // Snap to 0, 90, 180, 270
+      const snapped = Math.round(deg / 90) * 90;
+      dev.rotation = snapped;
+    } else {
+      // Resize based on handle
+      // Calculate current effective width/height from bounding box
+      const currentScale = dev.scale ?? 1;
+      const currentWidth = dev.width ?? currentScale;
+      const currentHeight = dev.height ?? currentScale;
+
+      // Calculate how much the bounding box should change
+      const startWidthNorm = startBbox.width / w;
+      const startHeightNorm = startBbox.height / h;
+
+      let widthDelta = 0;
+      let heightDelta = 0;
+      let posXDelta = 0;
+      let posYDelta = 0;
+
+      // Calculate resize deltas based on handle
+      if (handleType.includes("Left")) {
+        widthDelta = -deltaXNorm;
+        posXDelta = deltaXNorm / 2; // Move center left when resizing left edge
+      } else if (handleType.includes("Right")) {
+        widthDelta = deltaXNorm;
+        posXDelta = deltaXNorm / 2; // Move center right when resizing right edge
+      }
+
+      if (handleType.includes("Top")) {
+        heightDelta = -deltaYNorm;
+        posYDelta = deltaYNorm / 2; // Move center up when resizing top edge
+      } else if (handleType.includes("Bottom")) {
+        heightDelta = deltaYNorm;
+        posYDelta = deltaYNorm / 2; // Move center down when resizing bottom edge
+      }
+
+      // Calculate new dimensions
+      const newWidthNorm = startWidthNorm + widthDelta;
+      const newHeightNorm = startHeightNorm + heightDelta;
+
+      // Convert to device width/height (accounting for scale)
+      const newWidth = (newWidthNorm / startWidthNorm) * currentWidth;
+      const newHeight = (newHeightNorm / startHeightNorm) * currentHeight;
+
+      // Update device properties
+      dev.width = Math.max(0.1, Math.min(3, newWidth));
+      dev.height = Math.max(0.1, Math.min(3, newHeight));
+      dev.posX = Math.max(0, Math.min(1, dev.posX + posXDelta));
+      dev.posY = Math.max(0, Math.min(1, dev.posY + posYDelta));
+    }
+
+    saveDevices();
+    // No need to recompute scaled mappings - using direct 1:1 mapping
+  }
+
+  // Mouse event handlers for transform handles
+  canvas.addEventListener("mousedown", (e) => {
+    // Only allow dragging when screen capture is active
+    if (activeColorSource !== screenSource || !activeColorSource.isActive) {
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const canvasY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+    // Check all devices for a handle at this location
+    for (const dev of devices) {
+      if (!dev.enabled || !dev.map?.length || !dev.show) continue;
+
+      const canvasPts = applyTransformTo(dev);
+      const bbox = getBoundingBox(canvasPts);
+      if (!bbox) continue;
+
+      const handles = getTransformHandles(bbox);
+      const handleType = getHandleAt(canvasX, canvasY, handles);
+
+      if (handleType) {
+        isDragging = true;
+        activeTransform = {
+          deviceId: dev.id,
+          handleType: handleType,
+          startX: canvasX,
+          startY: canvasY,
+          startPosX: dev.posX ?? 0.5,
+          startPosY: dev.posY ?? 0.5,
+          startWidth: dev.width ?? dev.scale ?? 1,
+          startHeight: dev.height ?? dev.scale ?? 1,
+          startRotation: dev.rotation ?? 0,
+          startBbox: bbox,
+        };
+
+        // Set cursor based on handle type
+        if (handleType === "center") {
+          canvas.style.cursor = "move";
+        } else if (handleType === "rotation") {
+          canvas.style.cursor = "crosshair";
+        } else if (
+          handleType.includes("Left") ||
+          handleType.includes("Right")
+        ) {
+          canvas.style.cursor = "ew-resize";
+        } else if (
+          handleType.includes("Top") ||
+          handleType.includes("Bottom")
+        ) {
+          canvas.style.cursor = "ns-resize";
+        } else {
+          canvas.style.cursor = "nwse-resize";
+        }
+
+        e.preventDefault();
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const canvasY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+    if (!isDragging || !activeTransform) {
+      // Update cursor when hovering over handles
+      if (activeColorSource === screenSource && activeColorSource.isActive) {
+        let cursor = "default";
+        for (const dev of devices) {
+          if (!dev.enabled || !dev.map?.length || !dev.show) continue;
+          const canvasPts = applyTransformTo(dev);
+          const bbox = getBoundingBox(canvasPts);
+          if (!bbox) continue;
+          const handles = getTransformHandles(bbox);
+          const handleType = getHandleAt(canvasX, canvasY, handles);
+          if (handleType) {
+            if (handleType === "center") {
+              cursor = "move";
+            } else if (handleType === "rotation") {
+              cursor = "crosshair";
+            } else if (
+              handleType.includes("Left") ||
+              handleType.includes("Right")
+            ) {
+              cursor = "ew-resize";
+            } else if (
+              handleType.includes("Top") ||
+              handleType.includes("Bottom")
+            ) {
+              cursor = "ns-resize";
+            } else {
+              cursor = "nwse-resize";
+            }
+            break;
+          }
+        }
+        canvas.style.cursor = cursor;
+      }
+      return;
+    }
+
+    // Calculate delta from start position
+    const deltaX = canvasX - activeTransform.startX;
+    const deltaY = canvasY - activeTransform.startY;
+
+    // Update device transform
+    updateDeviceTransform(
+      activeTransform.deviceId,
+      activeTransform.handleType,
+      deltaX,
+      deltaY,
+      activeTransform.startBbox
+    );
+
+    e.preventDefault();
+  });
+
+  canvas.addEventListener("mouseup", (e) => {
+    if (isDragging) {
+      isDragging = false;
+      activeTransform = null;
+      canvas.style.cursor = "default";
+    }
+  });
+
+  canvas.addEventListener("mouseleave", (e) => {
+    if (isDragging) {
+      isDragging = false;
+      activeTransform = null;
+      canvas.style.cursor = "default";
+    }
+  });
+
+  // hslToRgb is imported from utils.js - no need to redefine
+
+  // ===== Source manager (Effect / Video / Lottie / Audio) =====
+  const src = {
+    type: "effect",
+    effectStyle: "plasma",
+    effectPalette: "rainbow", // Color palette for built-in effects
+    effectPaletteGradient: true, // Use gradient interpolation (true) or solid colors (false)
+    // Effect parameters
+    effectParams: {
+      plasma: { speed: 1.0, intensity: 1.0, colorShift: 0 },
+      stars: { speed: 1.0, count: 200, brightness: 1.0 },
+      waves: { speed: 1.0, frequency: 1.0, colorSpeed: 1.0 },
+      kaleidoscope: { speed: 1.0, segments: 12, rotation: 0 },
+      spiral: { speed: 1.0, arms: 5, tightness: 1.0 },
+      mandala: { speed: 1.0, petals: 8, rotation: 0 },
+      hexagons: { speed: 1.0, count: 3, rotation: 0 },
+      fan: { speed: 1.0, blades: 4, rotation: 0, colorShiftSpeed: 0.1 },
+      bars: {
+        speed: 1.0,
+        count: 16,
+        orientation: "vertical",
+        reverse: false,
+        mirror: false,
+      },
+      fullBars: {
+        speed: 1.0,
+        count: 16,
+        orientation: "vertical",
+        reverse: false,
+        mirror: false,
+      },
+      scrollingBars: {
+        speed: 1.0,
+        count: 16,
+        orientation: "vertical",
+        horizontalSpeed: 1.0,
+        verticalSpeed: 1.0,
+        reverse: false,
+        mirror: false,
+        colorShiftSpeed: 0.1,
+      },
+      butterchurn: {
+        preset: "",
+        blendLength: 2.0,
+        cyclePresets: false,
+        cycleSeconds: 30,
+        speedMultiplier: 0.2,
+        meshWidth: 64,
+        meshHeight: 48,
+        brightness: 1.0,
+        saturation: 1.0,
+        contrast: 1.0,
+        flashReduction: 0.0,
+      },
+      audioFan: {
+        blades: 4,
+        rotationSpeed: 1.0,
+        reactiveness: 2.0,
+        colorMode: "energy",
+      },
+      audioBars: {
+        count: 16,
+        orientation: "vertical",
+        reactiveness: 1.0,
+        reverse: false,
+        mirror: false,
+      },
+      audioFullBars: {
+        count: 16,
+        orientation: "vertical",
+        reactiveness: 1.0,
+        reverse: false,
+        mirror: false,
+      },
+      audioScrollingBars: {
+        count: 16,
+        orientation: "vertical",
+        reactiveness: 1.0,
+        horizontalReactiveness: 1.0,
+        verticalReactiveness: 1.0,
+        reverse: false,
+        mirror: false,
+      },
+    },
+    // Audio effect parameters
+    audioEffectParams: {
+      audioPlasma: { reactiveness: 2.0, colorShift: 0 },
+      audioStars: { reactiveness: 2.0, maxCount: 500 },
+      audioWaves: { reactiveness: 3.0, colorSpeed: 1.0 },
+      audioSpiral: { reactiveness: 2.0, arms: 5 },
+      audioFan: {
+        blades: 4,
+        rotationSpeed: 1.0,
+        reactiveness: 2.0,
+        colorMode: "energy",
+      },
+      audioBars: { count: 16, orientation: "vertical", reactiveness: 1.0 },
+      pulseRings: {
+        shape: "circle",
+        ringCount: 8,
+        rotation: 0,
+        size: 1.0,
+        ringWidth: 3,
+        enableGlow: true,
+      },
+      synthBars: { numberOfBars: 64, noiseGain: 0.3, lineSpeed: 0.2 },
+      sunflower: {
+        radius: 0.1,
+        size: 0.8,
+        innerRadiusGain: 1.5,
+        midRadiusGain: 1.2,
+        outerRadiusGain: 1.0,
+      },
+      frostFire: {
+        numberOfHexagons: 20,
+        height: 1.0,
+        colorBlend: 0.5,
+        dynamicColor: 0.3,
+        breathing: 0.2,
+      },
+      butterchurn: {
+        preset: "",
+        blendLength: 2.0,
+        audioGain: 1.0,
+        speedMultiplier: 0.2,
+        meshWidth: 64,
+        meshHeight: 48,
+        audioSmoothing: 0.0,
+        brightness: 1.0,
+        saturation: 1.0,
+        contrast: 1.0,
+        flashReduction: 0.0,
+      },
+    },
+    // Get audio intensity if available (for audio-reactive effects)
+    getAudioIntensity() {
+      return audioManager.getAudioIntensity();
+    },
+    // Effect renderer - uses module function
+    effectRender(t, ctx, w, h) {
+      const audioIntensity = src.getAudioIntensity();
+      return renderEffectVisualizer(
+        t,
+        ctx,
+        w,
+        h,
+        src.effectStyle,
+        src.effectParams,
+        audioIntensity,
+        src.effectPalette,
+        src.effectPaletteGradient
+      );
+    },
+
+    // Video
+    video: { el: null, fit: "contain" },
+
+    // Lottie
+    lottie: { anim: null, canvas: document.createElement("canvas"), ctx: null },
+
+    // Audio visualizer
+    audio: {
+      ctx: null,
+      analyser: null,
+      gain: null,
+      srcNode: null,
+      dataFreq: null,
+      dataWave: null,
+      stream: null,
+      style: "bars",
+      smoothing: 0.7,
+      fftSize: 1024,
+      sensitivity: 1.2,
+      inputDeviceId: null,
+      shockwaves: [], // Array of {radius, opacity, color, speed}
+      particles: [], // Array of particles for particle visualizer
+      palette: "rainbow", // Color palette name
+      paletteGradient: true, // Use gradient interpolation (true) or solid colors (false)
+    },
+  };
+
+  // colorPalettes and getPaletteColor are imported from colorPalettes.js module
+  // No need to redefine them here
+
+  // ---- UI bindings for source selection ----
+  const $srcType = $("srcType");
+  const $effectControls = $("srcEffectControls");
+  const $videoControls = $("srcVideoControls");
+  const $lottieControls = $("srcLottieControls");
+  const $audioControls = $("srcAudioControls");
+  const $effectStyle = $("effectStyle");
+  const $effectPalette = $("effectPalette");
+
+  // Update effect parameters UI
+  function updateEffectParamsUI() {
+    const paramsDiv = $("effectParams");
+    const style = src.effectStyle;
+    const params = src.effectParams[style] || {};
+    paramsDiv.innerHTML = "";
+
+    if (style === "plasma") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Intensity <input id="effIntensity" type="range" min="0.5" max="2" step="0.1" value="${params.intensity}"></label>
+        <label>Color Shift <input id="effColorShift" type="range" min="0" max="360" step="1" value="${params.colorShift}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effIntensity").addEventListener(
+        "input",
+        (e) => (params.intensity = parseFloat(e.target.value))
+      );
+      $("effColorShift").addEventListener(
+        "input",
+        (e) => (params.colorShift = parseFloat(e.target.value))
+      );
+    } else if (style === "stars") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Star Count <input id="effCount" type="range" min="50" max="500" step="10" value="${params.count}"></label>
+        <label>Brightness <input id="effBrightness" type="range" min="0.3" max="2" step="0.1" value="${params.brightness}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effCount").addEventListener(
+        "input",
+        (e) => (params.count = parseInt(e.target.value))
+      );
+      $("effBrightness").addEventListener(
+        "input",
+        (e) => (params.brightness = parseFloat(e.target.value))
+      );
+    } else if (style === "waves") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Frequency <input id="effFreq" type="range" min="0.5" max="3" step="0.1" value="${params.frequency}"></label>
+        <label>Color Speed <input id="effColorSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.colorSpeed}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effFreq").addEventListener(
+        "input",
+        (e) => (params.frequency = parseFloat(e.target.value))
+      );
+      $("effColorSpeed").addEventListener(
+        "input",
+        (e) => (params.colorSpeed = parseFloat(e.target.value))
+      );
+    } else if (style === "kaleidoscope") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Segments <input id="effSegments" type="range" min="4" max="24" step="1" value="${params.segments}"></label>
+        <label>Rotation <input id="effRotation" type="range" min="0" max="360" step="1" value="${params.rotation}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effSegments").addEventListener(
+        "input",
+        (e) => (params.segments = parseInt(e.target.value))
+      );
+      $("effRotation").addEventListener(
+        "input",
+        (e) => (params.rotation = parseFloat(e.target.value))
+      );
+    } else if (style === "spiral") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Arms <input id="effArms" type="range" min="2" max="12" step="1" value="${params.arms}"></label>
+        <label>Tightness <input id="effTightness" type="range" min="0.5" max="3" step="0.1" value="${params.tightness}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effArms").addEventListener(
+        "input",
+        (e) => (params.arms = parseFloat(e.target.value))
+      );
+      $("effTightness").addEventListener(
+        "input",
+        (e) => (params.tightness = parseFloat(e.target.value))
+      );
+    } else if (style === "mandala") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.speed}"></label>
+        <label>Petals <input id="effPetals" type="range" min="4" max="16" step="1" value="${params.petals}"></label>
+        <label>Rotation <input id="effRotation" type="range" min="0" max="360" step="1" value="${params.rotation}"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effPetals").addEventListener(
+        "input",
+        (e) => (params.petals = parseInt(e.target.value))
+      );
+      $("effRotation").addEventListener(
+        "input",
+        (e) => (params.rotation = parseFloat(e.target.value))
+      );
+    } else if (style === "hexagons") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.speed
+        }"></label>
+        <label>Count <input id="effCount" type="range" min="1" max="5" step="1" value="${
+          params.count || 3
+        }"></label>
+        <label>Rotation <input id="effRotation" type="range" min="0" max="360" step="1" value="${
+          params.rotation
+        }"></label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effCount").addEventListener(
+        "input",
+        (e) => (params.count = parseInt(e.target.value))
+      );
+      $("effRotation").addEventListener(
+        "input",
+        (e) => (params.rotation = parseFloat(e.target.value))
+      );
+    } else if (style === "fan") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.speed
+        }"></label>
+        <label>Blades <input id="effBlades" type="range" min="2" max="16" step="1" value="${
+          params.blades
+        }"></label>
+        <label>Rotation <input id="effRotation" type="range" min="0" max="360" step="1" value="${
+          params.rotation
+        }"></label>
+        <label>Color Shift Speed <input id="effColorShiftSpeed" type="range" min="0" max="0.5" step="0.01" value="${
+          params.colorShiftSpeed !== undefined ? params.colorShiftSpeed : 0.1
+        }"></label>
+        <small style="color: var(--text-secondary); font-size: 11px;">0 = no color shift, bars/blades stay same color</small>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effBlades").addEventListener(
+        "input",
+        (e) => (params.blades = parseInt(e.target.value))
+      );
+      $("effRotation").addEventListener(
+        "input",
+        (e) => (params.rotation = parseFloat(e.target.value))
+      );
+      $("effColorShiftSpeed").addEventListener(
+        "input",
+        (e) => (params.colorShiftSpeed = parseFloat(e.target.value))
+      );
+    } else if (style === "bars") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.speed
+        }"></label>
+        <label>Count <input id="effCount" type="range" min="4" max="64" step="1" value="${
+          params.count
+        }"></label>
+        <label>Orientation <select id="effOrientation">
+          <option value="vertical" ${
+            params.orientation === "vertical" ? "selected" : ""
+          }>Vertical</option>
+          <option value="horizontal" ${
+            params.orientation === "horizontal" ? "selected" : ""
+          }>Horizontal</option>
+        </select></label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Reverse</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effReverse" ${
+              params.reverse ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Mirror</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effMirror" ${
+              params.mirror ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effCount").addEventListener(
+        "input",
+        (e) => (params.count = parseInt(e.target.value))
+      );
+      $("effOrientation").addEventListener(
+        "change",
+        (e) => (params.orientation = e.target.value)
+      );
+      $("effReverse").addEventListener(
+        "change",
+        (e) => (params.reverse = e.target.checked)
+      );
+      $("effMirror").addEventListener(
+        "change",
+        (e) => (params.mirror = e.target.checked)
+      );
+    } else if (style === "fullBars") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.speed
+        }"></label>
+        <label>Count <input id="effCount" type="range" min="4" max="64" step="1" value="${
+          params.count
+        }"></label>
+        <label>Orientation <select id="effOrientation">
+          <option value="vertical" ${
+            params.orientation === "vertical" ? "selected" : ""
+          }>Vertical</option>
+          <option value="horizontal" ${
+            params.orientation === "horizontal" ? "selected" : ""
+          }>Horizontal</option>
+        </select></label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Reverse</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effReverse" ${
+              params.reverse ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Mirror</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effMirror" ${
+              params.mirror ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effCount").addEventListener(
+        "input",
+        (e) => (params.count = parseInt(e.target.value))
+      );
+      $("effOrientation").addEventListener(
+        "change",
+        (e) => (params.orientation = e.target.value)
+      );
+      $("effReverse").addEventListener(
+        "change",
+        (e) => (params.reverse = e.target.checked)
+      );
+      $("effMirror").addEventListener(
+        "change",
+        (e) => (params.mirror = e.target.checked)
+      );
+    } else if (style === "scrollingBars") {
+      paramsDiv.innerHTML = `
+        <label>Speed <input id="effSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.speed
+        }"></label>
+        <label>Count <input id="effCount" type="range" min="4" max="64" step="1" value="${
+          params.count
+        }"></label>
+        <label>Orientation <select id="effOrientation">
+          <option value="vertical" ${
+            params.orientation === "vertical" ? "selected" : ""
+          }>Vertical</option>
+          <option value="horizontal" ${
+            params.orientation === "horizontal" ? "selected" : ""
+          }>Horizontal</option>
+        </select></label>
+        <label>Horizontal Speed <input id="effHorizontalSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.horizontalSpeed || 1.0
+        }"></label>
+        <label>Vertical Speed <input id="effVerticalSpeed" type="range" min="0.1" max="3" step="0.1" value="${
+          params.verticalSpeed || 1.0
+        }"></label>
+        <label>Color Shift Speed <input id="effColorShiftSpeed" type="range" min="0" max="0.5" step="0.01" value="${
+          params.colorShiftSpeed !== undefined ? params.colorShiftSpeed : 0.1
+        }"></label>
+        <small style="color: var(--text-secondary); font-size: 11px;">0 = no color shift, bars stay same color</small>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Reverse</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effReverse" ${
+              params.reverse ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Mirror</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="effMirror" ${
+              params.mirror ? "checked" : ""
+            } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      `;
+      $("effSpeed").addEventListener(
+        "input",
+        (e) => (params.speed = parseFloat(e.target.value))
+      );
+      $("effCount").addEventListener(
+        "input",
+        (e) => (params.count = parseInt(e.target.value))
+      );
+      $("effOrientation").addEventListener(
+        "change",
+        (e) => (params.orientation = e.target.value)
+      );
+      $("effHorizontalSpeed").addEventListener(
+        "input",
+        (e) => (params.horizontalSpeed = parseFloat(e.target.value))
+      );
+      $("effVerticalSpeed").addEventListener(
+        "input",
+        (e) => (params.verticalSpeed = parseFloat(e.target.value))
+      );
+      $("effColorShiftSpeed").addEventListener(
+        "input",
+        (e) => (params.colorShiftSpeed = parseFloat(e.target.value))
+      );
+      $("effReverse").addEventListener(
+        "change",
+        (e) => (params.reverse = e.target.checked)
+      );
+      $("effMirror").addEventListener(
+        "change",
+        (e) => (params.mirror = e.target.checked)
+      );
+    } else if (style === "butterchurn") {
+      // Show loading state first
+      paramsDiv.innerHTML = `
+        <label>Preset
+          <select id="butterchurnPreset">
+            <option value="">Loading presets...</option>
+          </select>
+        </label>
+        <label>Blend Length <input id="butterchurnBlend" type="range" min="0" max="5" step="0.1" value="${
+          params.blendLength || 2.0
+        }"></label>
+        <label>Speed <input id="butterchurnSpeed" type="range" min="0.01" max="3" step="0.01" value="${
+          params.speedMultiplier !== undefined ? params.speedMultiplier : 0.2
+        }"></label>
+        <label>Brightness <input id="butterchurnBrightness" type="range" min="0.1" max="2" step="0.1" value="${
+          params.brightness !== undefined ? params.brightness : 1.0
+        }"></label>
+        <label>Saturation <input id="butterchurnSaturation" type="range" min="0" max="2" step="0.1" value="${
+          params.saturation !== undefined ? params.saturation : 1.0
+        }"></label>
+        <label>Contrast <input id="butterchurnContrast" type="range" min="0.5" max="2" step="0.1" value="${
+          params.contrast !== undefined ? params.contrast : 1.0
+        }"></label>
+        <label>Flash Reduction <input id="butterchurnFlashReduction" type="range" min="0" max="100" step="5" value="${
+          params.flashReduction !== undefined ? params.flashReduction : 0.0
+        }"></label>
+        <label>Mesh Width <input id="butterchurnMeshW" type="range" min="32" max="128" step="8" value="${
+          params.meshWidth !== undefined ? params.meshWidth : 64
+        }"></label>
+        <label>Mesh Height <input id="butterchurnMeshH" type="range" min="24" max="96" step="8" value="${
+          params.meshHeight !== undefined ? params.meshHeight : 48
+        }"></label>
+      `;
+
+      // Set up controls immediately
+      const $blend = $("butterchurnBlend");
+      if ($blend) {
+        $blend.addEventListener(
+          "input",
+          (e) => (params.blendLength = parseFloat(e.target.value))
+        );
+      }
+
+      const $speed = $("butterchurnSpeed");
+      if ($speed) {
+        $speed.addEventListener(
+          "input",
+          (e) => (params.speedMultiplier = parseFloat(e.target.value))
+        );
+      }
+
+      const $brightness = $("butterchurnBrightness");
+      if ($brightness) {
+        $brightness.addEventListener(
+          "input",
+          (e) => (params.brightness = parseFloat(e.target.value))
+        );
+      }
+
+      const $saturation = $("butterchurnSaturation");
+      if ($saturation) {
+        $saturation.addEventListener(
+          "input",
+          (e) => (params.saturation = parseFloat(e.target.value))
+        );
+      }
+
+      const $contrast = $("butterchurnContrast");
+      if ($contrast) {
+        $contrast.addEventListener(
+          "input",
+          (e) => (params.contrast = parseFloat(e.target.value))
+        );
+      }
+
+      const $flashReduction = $("butterchurnFlashReduction");
+      if ($flashReduction) {
+        $flashReduction.addEventListener(
+          "input",
+          (e) => (params.flashReduction = parseFloat(e.target.value))
+        );
+      }
+
+      const $meshW = $("butterchurnMeshW");
+      if ($meshW) {
+        $meshW.addEventListener("input", (e) => {
+          params.meshWidth = parseInt(e.target.value);
+          // Reinitialization will happen automatically on next render
+          // when renderButterchurnEffect detects the mesh size change
+        });
+      }
+
+      const $meshH = $("butterchurnMeshH");
+      if ($meshH) {
+        $meshH.addEventListener("input", (e) => {
+          params.meshHeight = parseInt(e.target.value);
+          // Reinitialization will happen automatically on next render
+          // when renderButterchurnEffect detects the mesh size change
+        });
+      }
+
+      // Get available presets asynchronously
+      (async () => {
+        try {
+          // Get calm presets first (with calm ones prioritized at the top)
+          const presets = await getButterchurnPresets(false);
+
+          // Separate calm presets from others for better UI organization
+          const calmPresets = presets.filter((p) =>
+            [
+              "Flexi - Simple Wave",
+              "martin - waveshape simple",
+              "Krash - Simple Waveforms",
+              "FiShbRaiN - smooth mover",
+              "projectM - Zen Plasma",
+              "Yin - Cloudy Morning",
+              "Flexi - mellow 5",
+              "martin - mellowdot",
+              "Eo.S. - Calm Field",
+              "Flexi - Blue Shards",
+              "Yin - Quiet Starfield",
+              "Krash - Ethereal Calm",
+              "Flexi - Lazy Swirl",
+              "projectM - Starfield",
+              "martin - color swirl simple",
+            ].includes(p)
+          );
+          const otherPresets = presets.filter((p) => !calmPresets.includes(p));
+
+          // Build options with calm presets first, separated by optgroup
+          let presetOptions = "";
+          if (calmPresets.length > 0) {
+            presetOptions +=
+              '<optgroup label="🌟 Calm Presets (Recommended for LED)">';
+            presetOptions += calmPresets
+              .map(
+                (p) =>
+                  `<option value="${p}" ${
+                    p === params.preset ? "selected" : ""
+                  }>${p}</option>`
+              )
+              .join("");
+            presetOptions += "</optgroup>";
+          }
+          if (otherPresets.length > 0) {
+            presetOptions += '<optgroup label="All Other Presets">';
+            presetOptions += otherPresets
+              .map(
+                (p) =>
+                  `<option value="${p}" ${
+                    p === params.preset ? "selected" : ""
+                  }>${p}</option>`
+              )
+              .join("");
+            presetOptions += "</optgroup>";
+          }
+
+          if (presetOptions === "") {
+            presetOptions = '<option value="">No presets available</option>';
+          }
+
+          // Update the preset dropdown
+          const $preset = $("butterchurnPreset");
+          if ($preset) {
+            $preset.innerHTML = presetOptions;
+            // Default to first calm preset if available, otherwise first preset
+            const defaultPreset =
+              calmPresets.length > 0
+                ? calmPresets[0]
+                : presets.length > 0
+                ? presets[0]
+                : "";
+            $preset.value = params.preset || defaultPreset;
+
+            // Update params with selected preset
+            if (!$preset.value && presets.length > 0) {
+              params.preset = presets[0];
+              $preset.value = presets[0];
+            }
+
+            $preset.addEventListener("change", (e) => {
+              params.preset = e.target.value;
+              // Force reload of preset by resetting the style
+              if (src.effectStyle === "butterchurn") {
+                const currentStyle = src.effectStyle;
+                src.effectStyle = "";
+                setTimeout(() => {
+                  src.effectStyle = currentStyle;
+                }, 10);
+              }
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load butterchurn presets:", err);
+          const $preset = $("butterchurnPreset");
+          if ($preset) {
+            $preset.innerHTML = `<option value="${params.preset || ""}">${
+              params.preset || "Select preset"
+            }</option>`;
+          }
+          // Add error message
+          const errorMsg = document.createElement("p");
+          errorMsg.style.cssText =
+            "color: #f88; font-size: 12px; margin-top: 4px;";
+          errorMsg.textContent = "Failed to load presets. Check console.";
+          paramsDiv.appendChild(errorMsg);
+        }
+      })();
+    }
+  }
+
+  // Update audio effect parameters UI
+  function updateAudioEffectParamsUI() {
+    const style = src.audio.style;
+    // Initialize params if they don't exist
+    if (!src.audioEffectParams[style]) {
+      if (style === "pulseRings") {
+        src.audioEffectParams[style] = {
+          shape: "circle",
+          ringCount: 8,
+          rotation: 0,
+          size: 1.0,
+        };
+      } else if (style === "audioHexagons") {
+        src.audioEffectParams[style] = {
+          reactiveness: 2.0,
+          count: 3,
+          rotation: 0,
+        };
+      } else if (style === "audioFan") {
+        src.audioEffectParams[style] = {
+          blades: 4,
+          rotationSpeed: 1.0,
+          reactiveness: 2.0,
+          colorMode: "energy",
+        };
+      } else if (style === "audioBars") {
+        src.audioEffectParams[style] = {
+          count: 16,
+          orientation: "vertical",
+          reactiveness: 1.0,
+        };
+      } else if (style === "audioFullBars") {
+        src.audioEffectParams[style] = {
+          count: 16,
+          orientation: "vertical",
+          reactiveness: 1.0,
+        };
+      } else if (style === "audioScrollingBars") {
+        src.audioEffectParams[style] = {
+          count: 16,
+          orientation: "vertical",
+          reactiveness: 1.0,
+          horizontalReactiveness: 1.0,
+          verticalReactiveness: 1.0,
+        };
+      } else {
+        src.audioEffectParams[style] = {};
+      }
+    }
+    const params = src.audioEffectParams[style];
+    let paramsDiv = $("audioEffectParams");
+    if (!paramsDiv) {
+      paramsDiv = document.createElement("div");
+      paramsDiv.id = "audioEffectParams";
+      $("srcAudioControls").appendChild(paramsDiv);
+    }
+
+    if (
+      [
+        "audioPlasma",
+        "audioStars",
+        "audioWaves",
+        "audioSpiral",
+        "pulseRings",
+        "butterchurn",
+        "audioFan",
+        "audioBars",
+        "audioFullBars",
+        "audioScrollingBars",
+      ].includes(style)
+    ) {
+      paramsDiv.style.display = "";
+      if (style === "audioPlasma") {
+        paramsDiv.innerHTML = `
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="5" step="0.1" value="${params.reactiveness}"></label>
+          <label>Color Shift <input id="audioColorShift" type="range" min="0" max="360" step="1" value="${params.colorShift}"></label>
+        `;
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioColorShift").addEventListener(
+          "input",
+          (e) => (params.colorShift = parseFloat(e.target.value))
+        );
+      } else if (style === "audioStars") {
+        paramsDiv.innerHTML = `
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="5" step="0.1" value="${params.reactiveness}"></label>
+          <label>Max Count <input id="audioMaxCount" type="range" min="200" max="1000" step="50" value="${params.maxCount}"></label>
+        `;
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioMaxCount").addEventListener(
+          "input",
+          (e) => (params.maxCount = parseInt(e.target.value))
+        );
+      } else if (style === "audioWaves") {
+        paramsDiv.innerHTML = `
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="5" step="0.1" value="${params.reactiveness}"></label>
+          <label>Color Speed <input id="audioColorSpeed" type="range" min="0.1" max="3" step="0.1" value="${params.colorSpeed}"></label>
+        `;
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioColorSpeed").addEventListener(
+          "input",
+          (e) => (params.colorSpeed = parseFloat(e.target.value))
+        );
+      } else if (style === "audioSpiral") {
+        paramsDiv.innerHTML = `
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="5" step="0.1" value="${params.reactiveness}"></label>
+          <label>Arms <input id="audioArms" type="range" min="2" max="12" step="1" value="${params.arms}"></label>
+        `;
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioArms").addEventListener(
+          "input",
+          (e) => (params.arms = parseFloat(e.target.value))
+        );
+      } else if (style === "pulseRings") {
+        paramsDiv.innerHTML = `
+          <label>Shape
+            <select id="pulseRingsShape">
+              <option value="circle" ${
+                params.shape === "circle" ? "selected" : ""
+              }>Circle</option>
+              <option value="triangle" ${
+                params.shape === "triangle" ? "selected" : ""
+              }>Triangle</option>
+              <option value="square" ${
+                params.shape === "square" ? "selected" : ""
+              }>Square</option>
+              <option value="pentagon" ${
+                params.shape === "pentagon" ? "selected" : ""
+              }>Pentagon</option>
+              <option value="hexagon" ${
+                params.shape === "hexagon" ? "selected" : ""
+              }>Hexagon</option>
+              <option value="heptagon" ${
+                params.shape === "heptagon" ? "selected" : ""
+              }>Heptagon</option>
+              <option value="octagon" ${
+                params.shape === "octagon" ? "selected" : ""
+              }>Octagon</option>
+              <option value="star" ${
+                params.shape === "star" ? "selected" : ""
+              }>Star</option>
+              <option value="snowflake" ${
+                params.shape === "snowflake" ? "selected" : ""
+              }>Snowflake</option>
+            </select>
+          </label>
+          <label>Ring Count <input id="pulseRingsCount" type="range" min="4" max="16" step="1" value="${
+            params.ringCount || 8
+          }"></label>
+          <label>Size <input id="pulseRingsSize" type="range" min="0.1" max="1.5" step="0.01" value="${
+            params.size !== undefined ? params.size : 1.0
+          }"> (0.1 = tiny, 1.0 = full size)</label>
+          <label>Rotation <input id="pulseRingsRotation" type="range" min="0" max="1" step="0.01" value="${
+            params.rotation !== undefined ? params.rotation : 0
+          }"> (0 = concentric, 1 = max rotation)</label>
+          <label>Ring Width <input id="pulseRingsWidth" type="range" min="3" max="20" step="1" value="${
+            params.ringWidth !== undefined ? params.ringWidth : 3
+          }"> (3-20px)</label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Enable Glow (off = solid vibrant colors for LED)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="pulseRingsGlow" ${
+                params.enableGlow !== false ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        `;
+        $("pulseRingsShape").addEventListener(
+          "change",
+          (e) => (params.shape = e.target.value)
+        );
+        $("pulseRingsCount").addEventListener(
+          "input",
+          (e) => (params.ringCount = parseInt(e.target.value))
+        );
+        $("pulseRingsSize").addEventListener(
+          "input",
+          (e) => (params.size = parseFloat(e.target.value))
+        );
+        $("pulseRingsRotation").addEventListener(
+          "input",
+          (e) => (params.rotation = parseFloat(e.target.value))
+        );
+        $("pulseRingsWidth").addEventListener(
+          "input",
+          (e) => (params.ringWidth = parseInt(e.target.value))
+        );
+        $("pulseRingsGlow").addEventListener(
+          "change",
+          (e) => (params.enableGlow = e.target.checked)
+        );
+      } else if (style === "audioHexagons") {
+        paramsDiv.innerHTML = `
+          <label>Reactiveness <input id="audioHexagonsReactiveness" type="range" min="0.5" max="5" step="0.1" value="${
+            params.reactiveness !== undefined ? params.reactiveness : 2.0
+          }"></label>
+          <label>Count <input id="audioHexagonsCount" type="range" min="1" max="5" step="1" value="${
+            params.count !== undefined ? params.count : 3
+          }"></label>
+          <label>Rotation <input id="audioHexagonsRotation" type="range" min="0" max="360" step="1" value="${
+            params.rotation !== undefined ? params.rotation : 0
+          }"></label>
+        `;
+        $("audioHexagonsReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioHexagonsCount").addEventListener(
+          "input",
+          (e) => (params.count = parseInt(e.target.value))
+        );
+        $("audioHexagonsRotation").addEventListener(
+          "input",
+          (e) => (params.rotation = parseFloat(e.target.value))
+        );
+      } else if (style === "butterchurn") {
+        // Show loading state first
+        paramsDiv.innerHTML = `
+          <label>Preset
+            <select id="audioButterchurnPreset">
+              <option value="">Loading presets...</option>
+            </select>
+          </label>
+          <label>Blend Length <input id="audioButterchurnBlend" type="range" min="0" max="5" step="0.1" value="${
+            params.blendLength || 2.0
+          }"></label>
+          <label>Audio Gain <input id="audioButterchurnGain" type="range" min="0" max="3" step="0.01" value="${
+            params.audioGain !== undefined ? params.audioGain : 1.0
+          }"></label>
+          <label>Speed <input id="audioButterchurnSpeed" type="range" min="0.01" max="3" step="0.01" value="${
+            params.speedMultiplier !== undefined ? params.speedMultiplier : 0.2
+          }"></label>
+          <label>Audio Smoothing <input id="audioButterchurnSmoothing" type="range" min="0" max="0.9" step="0.05" value="${
+            params.audioSmoothing !== undefined ? params.audioSmoothing : 0.0
+          }"></label>
+          <label>Brightness <input id="audioButterchurnBrightness" type="range" min="0.1" max="2" step="0.1" value="${
+            params.brightness !== undefined ? params.brightness : 1.0
+          }"></label>
+          <label>Saturation <input id="audioButterchurnSaturation" type="range" min="0" max="2" step="0.1" value="${
+            params.saturation !== undefined ? params.saturation : 1.0
+          }"></label>
+          <label>Contrast <input id="audioButterchurnContrast" type="range" min="0.5" max="2" step="0.1" value="${
+            params.contrast !== undefined ? params.contrast : 1.0
+          }"></label>
+          <label>Flash Reduction <input id="audioButterchurnFlashReduction" type="range" min="0" max="100" step="5" value="${
+            params.flashReduction !== undefined ? params.flashReduction : 0.0
+          }"></label>
+          <label>Mesh Width <input id="audioButterchurnMeshW" type="range" min="32" max="128" step="8" value="${
+            params.meshWidth !== undefined ? params.meshWidth : 64
+          }"></label>
+          <label>Mesh Height <input id="audioButterchurnMeshH" type="range" min="24" max="96" step="8" value="${
+            params.meshHeight !== undefined ? params.meshHeight : 48
+          }"></label>
+        `;
+
+        // Set up controls immediately
+        const $blend = $("audioButterchurnBlend");
+        if ($blend) {
+          $blend.addEventListener(
+            "input",
+            (e) => (params.blendLength = parseFloat(e.target.value))
+          );
+        }
+
+        const $gain = $("audioButterchurnGain");
+        if ($gain) {
+          $gain.addEventListener(
+            "input",
+            (e) => (params.audioGain = parseFloat(e.target.value))
+          );
+        }
+
+        const $speed = $("audioButterchurnSpeed");
+        if ($speed) {
+          $speed.addEventListener(
+            "input",
+            (e) => (params.speedMultiplier = parseFloat(e.target.value))
+          );
+        }
+
+        const $smoothing = $("audioButterchurnSmoothing");
+        if ($smoothing) {
+          $smoothing.addEventListener(
+            "input",
+            (e) => (params.audioSmoothing = parseFloat(e.target.value))
+          );
+        }
+
+        const $brightness = $("audioButterchurnBrightness");
+        if ($brightness) {
+          $brightness.addEventListener(
+            "input",
+            (e) => (params.brightness = parseFloat(e.target.value))
+          );
+        }
+
+        const $saturation = $("audioButterchurnSaturation");
+        if ($saturation) {
+          $saturation.addEventListener(
+            "input",
+            (e) => (params.saturation = parseFloat(e.target.value))
+          );
+        }
+
+        const $contrast = $("audioButterchurnContrast");
+        if ($contrast) {
+          $contrast.addEventListener(
+            "input",
+            (e) => (params.contrast = parseFloat(e.target.value))
+          );
+        }
+
+        const $flashReduction = $("audioButterchurnFlashReduction");
+        if ($flashReduction) {
+          $flashReduction.addEventListener(
+            "input",
+            (e) => (params.flashReduction = parseFloat(e.target.value))
+          );
+        }
+
+        const $meshW = $("audioButterchurnMeshW");
+        if ($meshW) {
+          $meshW.addEventListener("input", (e) => {
+            params.meshWidth = parseInt(e.target.value);
+            // Reinitialization will happen automatically on next render
+            // when renderAudioButterchurn detects the mesh size change
+          });
+        }
+
+        const $meshH = $("audioButterchurnMeshH");
+        if ($meshH) {
+          $meshH.addEventListener("input", (e) => {
+            params.meshHeight = parseInt(e.target.value);
+            // Reinitialization will happen automatically on next render
+            // when renderAudioButterchurn detects the mesh size change
+          });
+        }
+
+        // Get available presets asynchronously
+        (async () => {
+          try {
+            // Get all presets with calm ones prioritized
+            const presets = await getButterchurnPresets(false);
+
+            // Separate calm presets from others for better UI organization
+            const calmPresets = presets.filter((p) =>
+              [
+                "Flexi - Simple Wave",
+                "martin - waveshape simple",
+                "Krash - Simple Waveforms",
+                "FiShbRaiN - smooth mover",
+                "projectM - Zen Plasma",
+                "Yin - Cloudy Morning",
+                "Flexi - mellow 5",
+                "martin - mellowdot",
+                "Eo.S. - Calm Field",
+                "Flexi - Blue Shards",
+                "Yin - Quiet Starfield",
+                "Krash - Ethereal Calm",
+                "Flexi - Lazy Swirl",
+                "projectM - Starfield",
+                "martin - color swirl simple",
+              ].includes(p)
+            );
+            const otherPresets = presets.filter(
+              (p) => !calmPresets.includes(p)
+            );
+
+            // Build options with calm presets first, separated by optgroup
+            let presetOptions = "";
+            if (calmPresets.length > 0) {
+              presetOptions +=
+                '<optgroup label="🌟 Calm Presets (Recommended for LED)">';
+              presetOptions += calmPresets
+                .map(
+                  (p) =>
+                    `<option value="${p}" ${
+                      p === params.preset ? "selected" : ""
+                    }>${p}</option>`
+                )
+                .join("");
+              presetOptions += "</optgroup>";
+            }
+            if (otherPresets.length > 0) {
+              presetOptions += '<optgroup label="All Other Presets">';
+              presetOptions += otherPresets
+                .map(
+                  (p) =>
+                    `<option value="${p}" ${
+                      p === params.preset ? "selected" : ""
+                    }>${p}</option>`
+                )
+                .join("");
+              presetOptions += "</optgroup>";
+            }
+
+            if (presetOptions === "") {
+              presetOptions = '<option value="">No presets available</option>';
+            }
+
+            // Update the preset dropdown
+            const $preset = $("audioButterchurnPreset");
+            if ($preset) {
+              $preset.innerHTML = presetOptions;
+              // Default to first calm preset if available, otherwise first preset
+              const defaultPreset =
+                calmPresets.length > 0
+                  ? calmPresets[0]
+                  : presets.length > 0
+                  ? presets[0]
+                  : "";
+              $preset.value = params.preset || defaultPreset;
+
+              // Update params with selected preset
+              if (!$preset.value && presets.length > 0) {
+                params.preset = presets[0];
+                $preset.value = presets[0];
+              }
+
+              $preset.addEventListener("change", (e) => {
+                params.preset = e.target.value;
+                // Force reload of preset by resetting the style
+                if (src.audio.style === "butterchurn") {
+                  const currentStyle = src.audio.style;
+                  src.audio.style = "";
+                  setTimeout(() => {
+                    src.audio.style = currentStyle;
+                  }, 10);
+                }
+              });
+            }
+          } catch (err) {
+            console.error("Failed to load butterchurn presets:", err);
+            const $preset = $("audioButterchurnPreset");
+            if ($preset) {
+              $preset.innerHTML = `<option value="${params.preset || ""}">${
+                params.preset || "Select preset"
+              }</option>`;
+            }
+            // Add error message
+            const errorMsg = document.createElement("p");
+            errorMsg.style.cssText =
+              "color: #f88; font-size: 12px; margin-top: 4px;";
+            errorMsg.textContent = "Failed to load presets. Check console.";
+            paramsDiv.appendChild(errorMsg);
+          }
+        })();
+      } else if (style === "audioFan") {
+        paramsDiv.innerHTML = `
+          <label>Blades <input id="audioBlades" type="range" min="2" max="16" step="1" value="${
+            params.blades || 4
+          }"></label>
+          <label>Rotation Speed <input id="audioRotationSpeed" type="range" min="0.1" max="5" step="0.1" value="${
+            params.rotationSpeed || 1.0
+          }"></label>
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="5" step="0.1" value="${
+            params.reactiveness || 2.0
+          }"></label>
+          <label>Color Mode <select id="audioColorMode">
+            <option value="energy" ${
+              params.colorMode === "energy" ? "selected" : ""
+            }>Energy</option>
+            <option value="bass" ${
+              params.colorMode === "bass" ? "selected" : ""
+            }>Bass</option>
+          </select></label>
+        `;
+        $("audioBlades").addEventListener(
+          "input",
+          (e) => (params.blades = parseInt(e.target.value))
+        );
+        $("audioRotationSpeed").addEventListener(
+          "input",
+          (e) => (params.rotationSpeed = parseFloat(e.target.value))
+        );
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioColorMode").addEventListener(
+          "change",
+          (e) => (params.colorMode = e.target.value)
+        );
+      } else if (style === "audioBars") {
+        paramsDiv.innerHTML = `
+          <label>Count <input id="audioBarCount" type="range" min="4" max="64" step="1" value="${
+            params.count || 16
+          }"></label>
+          <label>Orientation <select id="audioBarOrientation">
+            <option value="vertical" ${
+              params.orientation === "vertical" ? "selected" : ""
+            }>Vertical</option>
+            <option value="horizontal" ${
+              params.orientation === "horizontal" ? "selected" : ""
+            }>Horizontal</option>
+          </select></label>
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="3" step="0.1" value="${
+            params.reactiveness || 1.0
+          }"></label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Reverse</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioReverse" ${
+                params.reverse ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Mirror</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioMirror" ${
+                params.mirror ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        `;
+        $("audioBarCount").addEventListener(
+          "input",
+          (e) => (params.count = parseInt(e.target.value))
+        );
+        $("audioBarOrientation").addEventListener(
+          "change",
+          (e) => (params.orientation = e.target.value)
+        );
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioReverse").addEventListener(
+          "change",
+          (e) => (params.reverse = e.target.checked)
+        );
+        $("audioMirror").addEventListener(
+          "change",
+          (e) => (params.mirror = e.target.checked)
+        );
+      } else if (style === "audioFullBars") {
+        paramsDiv.innerHTML = `
+          <label>Count <input id="audioFullBarCount" type="range" min="4" max="64" step="1" value="${
+            params.count || 16
+          }"></label>
+          <label>Orientation <select id="audioFullBarOrientation">
+            <option value="vertical" ${
+              params.orientation === "vertical" ? "selected" : ""
+            }>Vertical</option>
+            <option value="horizontal" ${
+              params.orientation === "horizontal" ? "selected" : ""
+            }>Horizontal</option>
+          </select></label>
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="3" step="0.1" value="${
+            params.reactiveness || 1.0
+          }"></label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Reverse</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioReverse" ${
+                params.reverse ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Mirror</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioMirror" ${
+                params.mirror ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        `;
+        $("audioFullBarCount").addEventListener(
+          "input",
+          (e) => (params.count = parseInt(e.target.value))
+        );
+        $("audioFullBarOrientation").addEventListener(
+          "change",
+          (e) => (params.orientation = e.target.value)
+        );
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioReverse").addEventListener(
+          "change",
+          (e) => (params.reverse = e.target.checked)
+        );
+        $("audioMirror").addEventListener(
+          "change",
+          (e) => (params.mirror = e.target.checked)
+        );
+      } else if (style === "audioScrollingBars") {
+        paramsDiv.innerHTML = `
+          <label>Count <input id="audioScrollingBarCount" type="range" min="4" max="64" step="1" value="${
+            params.count || 16
+          }"></label>
+          <label>Orientation <select id="audioScrollingBarOrientation">
+            <option value="vertical" ${
+              params.orientation === "vertical" ? "selected" : ""
+            }>Vertical</option>
+            <option value="horizontal" ${
+              params.orientation === "horizontal" ? "selected" : ""
+            }>Horizontal</option>
+          </select></label>
+          <label>Reactiveness <input id="audioReactiveness" type="range" min="0.5" max="3" step="0.1" value="${
+            params.reactiveness || 1.0
+          }"></label>
+          <label>Horizontal Reactiveness <input id="audioHorizontalReactiveness" type="range" min="0.5" max="3" step="0.1" value="${
+            params.horizontalReactiveness || 1.0
+          }"></label>
+          <label>Vertical Reactiveness <input id="audioVerticalReactiveness" type="range" min="0.5" max="3" step="0.1" value="${
+            params.verticalReactiveness || 1.0
+          }"></label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Reverse</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioReverse" ${
+                params.reverse ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Mirror</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="audioMirror" ${
+                params.mirror ? "checked" : ""
+              } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        `;
+        $("audioScrollingBarCount").addEventListener(
+          "input",
+          (e) => (params.count = parseInt(e.target.value))
+        );
+        $("audioScrollingBarOrientation").addEventListener(
+          "change",
+          (e) => (params.orientation = e.target.value)
+        );
+        $("audioReactiveness").addEventListener(
+          "input",
+          (e) => (params.reactiveness = parseFloat(e.target.value))
+        );
+        $("audioHorizontalReactiveness").addEventListener(
+          "input",
+          (e) => (params.horizontalReactiveness = parseFloat(e.target.value))
+        );
+        $("audioVerticalReactiveness").addEventListener(
+          "input",
+          (e) => (params.verticalReactiveness = parseFloat(e.target.value))
+        );
+        $("audioReverse").addEventListener(
+          "change",
+          (e) => (params.reverse = e.target.checked)
+        );
+        $("audioMirror").addEventListener(
+          "change",
+          (e) => (params.mirror = e.target.checked)
+        );
+      }
+    } else {
+      paramsDiv.style.display = "none";
+    }
+  }
+
+  $effectStyle.addEventListener("change", () => {
+    src.effectStyle = $effectStyle.value;
+    updateEffectParamsUI();
+  });
+  $effectPalette.addEventListener("change", async () => {
+    src.effectPalette = $effectPalette.value;
+    await updatePaletteDropdowns();
+  });
+  // Set initial value to match src.effectPalette
+  if ($effectPalette) {
+    $effectPalette.value = src.effectPalette || "rainbow";
+  }
+
+  const $effectPaletteGradient = $("effectPaletteGradient");
+  if ($effectPaletteGradient) {
+    $effectPaletteGradient.checked = src.effectPaletteGradient !== false;
+    $effectPaletteGradient.addEventListener("change", () => {
+      src.effectPaletteGradient = $effectPaletteGradient.checked;
+    });
+  }
+
+  updateEffectParamsUI(); // Initialize
+
+  // ===== Palette Editor =====
+  let currentEditingPalette = null; // "effect" or "audio"
+  let currentPaletteColors = [];
+
+  // HSL to RGB helper (for color picker)
+  function hslToRgbForEditor(h, s, l) {
+    h = h / 360;
+    s = s / 100;
+    l = l / 100;
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+
+  // RGB to HSL helper
+  function rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h,
+      s,
+      l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          break;
+        case g:
+          h = ((b - r) / d + 2) / 6;
+          break;
+        case b:
+          h = ((r - g) / d + 4) / 6;
+          break;
+      }
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 };
+  }
+
+  // Update palette dropdowns to include custom palettes
+  async function updatePaletteDropdowns() {
+    await loadCustomPalettes();
+    const customNames = getCustomPaletteNames();
+    const effectSelect = $("effectPalette");
+    const audioSelect = $("audioPalette");
+
+    // Remove existing custom palette options
+    [effectSelect, audioSelect].forEach((select) => {
+      const customOpts = Array.from(select.options).filter((opt) =>
+        customNames.includes(opt.value)
+      );
+      customOpts.forEach((opt) => opt.remove());
+    });
+
+    // Add custom palettes
+    customNames.forEach((name) => {
+      const effectOpt = document.createElement("option");
+      effectOpt.value = name;
+      effectOpt.textContent = name + " (Custom)";
+      effectSelect.appendChild(effectOpt);
+
+      const audioOpt = document.createElement("option");
+      audioOpt.value = name;
+      audioOpt.textContent = name + " (Custom)";
+      audioSelect.appendChild(audioOpt);
+    });
+  }
+
+  // Render color circles
+  function renderPaletteColors() {
+    const container = $("paletteColors");
+    container.innerHTML = "";
+
+    currentPaletteColors.forEach((color, index) => {
+      const rgb = hslToRgbForEditor(color.h, color.s, color.l);
+      const colorStr = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+      const colorDiv = document.createElement("div");
+      colorDiv.style.cssText = `
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: ${colorStr};
+        border: 2px solid #fff;
+        cursor: pointer;
+        position: relative;
+        flex-shrink: 0;
+      `;
+      colorDiv.title = `H: ${Math.round(color.h)} S: ${Math.round(
+        color.s
+      )}% L: ${Math.round(color.l)}%`;
+
+      // Add delete button
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "×";
+      deleteBtn.style.cssText = `
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #f00;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 0;
+        display: none;
+      `;
+      colorDiv.appendChild(deleteBtn);
+
+      colorDiv.addEventListener("mouseenter", () => {
+        deleteBtn.style.display = "block";
+      });
+      colorDiv.addEventListener("mouseleave", () => {
+        deleteBtn.style.display = "none";
+      });
+
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (currentPaletteColors.length > 1) {
+          currentPaletteColors.splice(index, 1);
+          renderPaletteColors();
+        }
+      });
+
+      colorDiv.addEventListener("click", () => {
+        editColor(index);
+      });
+
+      container.appendChild(colorDiv);
+    });
+  }
+
+  // Edit color using color picker
+  function editColor(index) {
+    const color = currentPaletteColors[index];
+    const rgb = hslToRgbForEditor(color.h, color.s, color.l);
+    const hexColor =
+      "#" +
+      [rgb[0], rgb[1], rgb[2]]
+        .map((x) => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("");
+
+    // Create color input
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = hexColor;
+    colorInput.style.position = "absolute";
+    colorInput.style.opacity = "0";
+    colorInput.style.width = "0";
+    colorInput.style.height = "0";
+
+    colorInput.addEventListener("change", (e) => {
+      const hex = e.target.value;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      const hsl = rgbToHsl(r, g, b);
+      currentPaletteColors[index] = hsl;
+      renderPaletteColors();
+      document.body.removeChild(colorInput);
+    });
+
+    document.body.appendChild(colorInput);
+    colorInput.click();
+  }
+
+  // Open palette editor
+  function openPaletteEditor(paletteType) {
+    currentEditingPalette = paletteType;
+    const paletteName =
+      paletteType === "effect" ? $effectPalette.value : $("audioPalette").value;
+
+    // Convert palette to array
+    const customPalette = getCustomPalette(paletteName);
+    if (customPalette) {
+      currentPaletteColors = JSON.parse(JSON.stringify(customPalette));
+    } else {
+      // Built-in palettes are now arrays, so we can use them directly
+      const colors = paletteToArray(paletteName);
+      currentPaletteColors = colors || [];
+    }
+
+    renderPaletteColors();
+    $("paletteEditor").style.display = "block";
+  }
+
+  // Close palette editor
+  function closePaletteEditor() {
+    $("paletteEditor").style.display = "none";
+    currentEditingPalette = null;
+    currentPaletteColors = [];
+    $("paletteEditorStatus").textContent = "";
+    $("customPaletteName").value = "";
+  }
+
+  // Add color to palette
+  $("addPaletteColor").addEventListener("click", () => {
+    currentPaletteColors.push({ h: 0, s: 100, l: 50 });
+    renderPaletteColors();
+  });
+
+  // Save as custom palette
+  $("saveCustomPalette").addEventListener("click", async () => {
+    const name = $("customPaletteName").value.trim();
+    if (!name) {
+      $("paletteEditorStatus").textContent = "Please enter a name";
+      $("paletteEditorStatus").style.color = "#f00";
+      return;
+    }
+
+    if (currentPaletteColors.length === 0) {
+      $("paletteEditorStatus").textContent =
+        "Palette must have at least one color";
+      $("paletteEditorStatus").style.color = "#f00";
+      return;
+    }
+
+    const result = await saveCustomPalette(name, currentPaletteColors);
+    if (result && result.success) {
+      await loadCustomPalettes(); // Reload palettes from file
+      updatePaletteDropdowns();
+
+      // Update current palette selection
+      if (currentEditingPalette === "effect") {
+        $effectPalette.value = name;
+        src.effectPalette = name;
+      } else {
+        $("audioPalette").value = name;
+        src.audio.palette = name;
+      }
+
+      $("paletteEditorStatus").textContent = `Saved as "${name}"`;
+      $("paletteEditorStatus").style.color = "#0f0";
+      $("customPaletteName").value = "";
+    } else {
+      $("paletteEditorStatus").textContent =
+        result?.error || "Failed to save palette";
+      $("paletteEditorStatus").style.color = "#f00";
+    }
+  });
+
+  // Delete custom palette
+  $("deleteCustomPalette").addEventListener("click", async () => {
+    const name = $("customPaletteName").value.trim();
+    if (!name) {
+      $("paletteEditorStatus").textContent =
+        "Please enter a palette name to delete";
+      $("paletteEditorStatus").style.color = "#f00";
+      return;
+    }
+
+    // Check if it's a built-in palette
+    if (colorPalettes[name]) {
+      $("paletteEditorStatus").textContent = "Cannot delete built-in palettes";
+      $("paletteEditorStatus").style.color = "#f00";
+      return;
+    }
+
+    // Check if palette exists
+    if (!getCustomPalette(name)) {
+      $("paletteEditorStatus").textContent = `Palette "${name}" not found`;
+      $("paletteEditorStatus").style.color = "#f00";
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the palette "${name}"?`)) {
+      return;
+    }
+
+    const result = await deleteCustomPalette(name);
+    if (result && result.success) {
+      await loadCustomPalettes(); // Reload palettes from file
+      updatePaletteDropdowns();
+
+      // Reset to default if current palette was deleted
+      if (currentEditingPalette === "effect" && src.effectPalette === name) {
+        $effectPalette.value = "rainbow";
+        src.effectPalette = "rainbow";
+      } else if (
+        currentEditingPalette === "audio" &&
+        src.audio.palette === name
+      ) {
+        $("audioPalette").value = "rainbow";
+        src.audio.palette = "rainbow";
+      }
+
+      $("paletteEditorStatus").textContent = `Deleted "${name}"`;
+      $("paletteEditorStatus").style.color = "#0f0";
+      $("customPaletteName").value = "";
+      closePaletteEditor();
+    } else {
+      $("paletteEditorStatus").textContent =
+        result?.error || "Failed to delete palette";
+      $("paletteEditorStatus").style.color = "#f00";
+    }
+  });
+
+  // Edit palette buttons
+  $("editEffectPalette").addEventListener("click", () => {
+    openPaletteEditor("effect");
+  });
+
+  $("editAudioPalette").addEventListener("click", () => {
+    openPaletteEditor("audio");
+  });
+
+  // Close editor
+  $("closePaletteEditor").addEventListener("click", () => {
+    closePaletteEditor();
+  });
+
+  // ===== Template Modal =====
+  let currentTemplateDevice = null;
+  let currentTemplateCallback = null;
+  let currentTemplateLog = null;
+
+  function openTemplateModal(dev, logFn, callback) {
+    currentTemplateDevice = dev;
+    currentTemplateLog = logFn;
+    currentTemplateCallback = callback;
+
+    // Reset form
+    $("templateType").value = "linear_strip";
+    $("linearStripCount").value = "50";
+    $("circleSegments").value = "";
+    $("gridRows").value = "10";
+    $("gridRowCounts").value = "";
+    $("templateModalStatus").textContent = "";
+
+    // Show appropriate options
+    updateTemplateOptions();
+
+    // Show modal
+    $("templateModal").style.display = "flex";
+  }
+
+  function closeTemplateModal() {
+    $("templateModal").style.display = "none";
+    currentTemplateDevice = null;
+    currentTemplateCallback = null;
+    currentTemplateLog = null;
+  }
+
+  function updateTemplateOptions() {
+    const templateType = $("templateType").value;
+
+    // Hide all options
+    $("linearStripOptions").style.display = "none";
+    $("circleOptions").style.display = "none";
+    $("gridOptions").style.display = "none";
+
+    // Show relevant options
+    if (templateType === "linear_strip") {
+      $("linearStripOptions").style.display = "block";
+    } else if (templateType === "circle") {
+      $("circleOptions").style.display = "block";
+    } else if (templateType === "grid") {
+      $("gridOptions").style.display = "block";
+    }
+  }
+
+  async function applyTemplate() {
+    if (!currentTemplateDevice) return;
+
+    const templateType = $("templateType").value;
+    let map = [];
+
+    try {
+      if (templateType === "linear_strip") {
+        const count = parseInt($("linearStripCount").value, 10);
+        if (!count || count < 1) {
+          $("templateModalStatus").textContent =
+            "Please enter a valid LED count";
+          return;
+        }
+        map = generateMappingFromTemplate("linear_strip", { count });
+      } else if (templateType === "circle") {
+        const segmentsStr = $("circleSegments").value.trim();
+        if (!segmentsStr) {
+          $("templateModalStatus").textContent =
+            "Please enter LED counts for each circle";
+          return;
+        }
+        const segments = segmentsStr
+          .split(",")
+          .map((s) => parseInt(s.trim(), 10))
+          .filter((n) => !isNaN(n) && n > 0);
+        if (segments.length === 0) {
+          $("templateModalStatus").textContent =
+            "Please enter valid LED counts (e.g., 300,200,500)";
+          return;
+        }
+        const totalCount = segments.reduce((a, b) => a + b, 0);
+        map = generateMappingFromTemplate("circle", {
+          count: totalCount,
+          segments,
+        });
+      } else if (templateType === "grid") {
+        const rows = parseInt($("gridRows").value, 10);
+        if (!rows || rows < 1) {
+          $("templateModalStatus").textContent =
+            "Please enter a valid number of rows";
+          return;
+        }
+        const rowCountsStr = $("gridRowCounts").value.trim();
+        if (!rowCountsStr) {
+          $("templateModalStatus").textContent = "Please enter LEDs per row";
+          return;
+        }
+        const rowCounts = rowCountsStr
+          .split(",")
+          .map((s) => parseInt(s.trim(), 10))
+          .filter((n) => !isNaN(n) && n > 0);
+        if (rowCounts.length === 0) {
+          $("templateModalStatus").textContent =
+            "Please enter valid LED counts (e.g., 50,50,50 or 50)";
+          return;
+        }
+
+        // If single number, use for all rows
+        const finalRowCounts =
+          rowCounts.length === 1
+            ? Array(rows).fill(rowCounts[0])
+            : rowCounts.slice(0, rows);
+
+        const totalCount = finalRowCounts.reduce((a, b) => a + b, 0);
+        map = generateMappingFromTemplate("grid", {
+          count: totalCount,
+          rows,
+          rowCounts: finalRowCounts,
+        });
+      }
+
+      if (map.length === 0) {
+        $("templateModalStatus").textContent = "Failed to generate mapping";
+        return;
+      }
+
+      // Apply mapping to device
+      currentTemplateDevice.map = map;
+      currentTemplateDevice.posX ??= 0.5;
+      currentTemplateDevice.posY ??= 0.5;
+      currentTemplateDevice.scale ??= 1;
+      currentTemplateDevice.width ??= currentTemplateDevice.scale ?? 1;
+      currentTemplateDevice.height ??= currentTemplateDevice.scale ?? 1;
+
+      // Call callback to save and refresh
+      if (currentTemplateCallback) {
+        currentTemplateCallback();
+      }
+
+      if (currentTemplateLog) {
+        currentTemplateLog(
+          `Loaded ${templateType} template with ${map.length} LEDs`
+        );
+      }
+
+      // Store device info before closing modal
+      const deviceName = currentTemplateDevice.name || "device";
+      const logFn = currentTemplateLog;
+
+      closeTemplateModal();
+
+      // Ask if user wants to save the map to devices.json
+      const shouldSave = confirm(
+        `Do you want to save the mapping to ${deviceName} in devices.json?`
+      );
+
+      if (shouldSave) {
+        const result = await saveDevicesToFile();
+        if (result.success) {
+          if (logFn) {
+            logFn(`Mapping saved to devices.json for ${deviceName}`);
+          }
+        } else {
+          if (logFn) {
+            logFn(`Failed to save mapping: ${result.error || "Unknown error"}`);
+          }
+        }
+      }
+    } catch (err) {
+      $("templateModalStatus").textContent = `Error: ${err.message}`;
+    }
+  }
+
+  // Template modal event listeners
+  $("templateType").addEventListener("change", updateTemplateOptions);
+  $("closeTemplateModal").addEventListener("click", closeTemplateModal);
+  $("cancelTemplate").addEventListener("click", closeTemplateModal);
+  $("applyTemplate").addEventListener("click", applyTemplate);
+
+  // Close modal when clicking outside
+  $("templateModal").addEventListener("click", (e) => {
+    if (e.target === $("templateModal")) {
+      closeTemplateModal();
+    }
+  });
+
+  // Make openTemplateModal available globally for deviceManager.js
+  window.openTemplateModal = openTemplateModal;
+
+  // generateMappingFromTemplate is already imported from deviceManager.js
+
+  // Initialize: update dropdowns with custom palettes
+  (async () => {
+    await updatePaletteDropdowns();
+  })();
+
+  $srcType.addEventListener("change", () => {
+    src.type = $srcType.value;
+    $effectControls.style.display = src.type === "effect" ? "" : "none";
+    $videoControls.style.display = src.type === "video" ? "" : "none";
+    $lottieControls.style.display = src.type === "lottie" ? "" : "none";
+    $audioControls.style.display = src.type === "audio" ? "" : "none";
+    if (src.type === "audio") refreshAudioInputs();
+  });
+
+  // ===== Video controls =====
+  const $videoFile = $("videoFile");
+  const $videoFit = $("videoFit");
+  const $videoSpeed = $("videoSpeed");
+  const $videoLoop = $("videoLoop");
+  const $videoMute = $("videoMute");
+  const $videoPlay = $("videoPlay");
+
+  $videoFit.addEventListener("change", () => (src.video.fit = $videoFit.value));
+  $videoSpeed.addEventListener("input", () => {
+    if (src.video.el)
+      src.video.el.playbackRate = parseFloat($videoSpeed.value) || 1.0;
+  });
+  $videoLoop.addEventListener("change", () => {
+    if (src.video.el) src.video.el.loop = $videoLoop.checked;
+  });
+  $videoMute.addEventListener("change", () => {
+    if (src.video.el) src.video.el.muted = $videoMute.checked;
+  });
+  $videoPlay.addEventListener("click", () => {
+    if (!src.video.el) return;
+    if (src.video.el.paused) src.video.el.play();
+    else src.video.el.pause();
+  });
+
+  $videoFile.addEventListener("change", () => {
+    const f = $videoFile.files?.[0];
+    if (!f) return;
+    if (src.video.el) {
+      try {
+        src.video.el.pause();
+      } catch {}
+    }
+    const v = document.createElement("video");
+    v.muted = $videoMute.checked;
+    v.loop = $videoLoop.checked;
+    v.playsInline = true;
+    v.src = URL.createObjectURL(f);
+    v.onloadedmetadata = () => v.play().catch(() => {});
+    v.playbackRate = parseFloat($videoSpeed.value) || 1.0;
+    src.video.el = v;
+    log(`Loaded video: ${f.name}`);
+  });
+
+  // ===== Lottie controls =====
+  const $lottieFile = $("lottieFile");
+  const $lottieSpeed = $("lottieSpeed");
+  const $lottieLoop = $("lottieLoop");
+
+  $lottieFile.addEventListener("change", () => {
+    const f = $lottieFile.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!window.lottie) {
+        log("Lottie library not loaded. Please check the browser console.");
+        return;
+      }
+      if (src.lottie.anim) {
+        try {
+          src.lottie.anim.destroy();
+        } catch {}
+      }
+      src.lottie.canvas.width = canvas.width;
+      src.lottie.canvas.height = canvas.height;
+      src.lottie.ctx = src.lottie.canvas.getContext("2d");
+      const anim = lottie.loadAnimation({
+        animationData: JSON.parse(reader.result),
+        renderer: "canvas",
+        loop: $lottieLoop.checked,
+        autoplay: true,
+        rendererSettings: { context: src.lottie.ctx, clearCanvas: true },
+      });
+      anim.setSpeed(parseFloat($lottieSpeed.value) || 1.0);
+      src.lottie.anim = anim;
+      log(`Loaded Lottie: ${f.name}`);
+    };
+    reader.readAsText(f);
+  });
+  $lottieSpeed.addEventListener("input", () => {
+    if (src.lottie.anim)
+      src.lottie.anim.setSpeed(parseFloat($lottieSpeed.value) || 1.0);
+  });
+  $lottieLoop.addEventListener("change", () => {
+    if (src.lottie.anim) {
+      src.lottie.anim.loop = $lottieLoop.checked;
+      if ($lottieLoop.checked && src.lottie.anim.isPaused)
+        src.lottie.anim.play();
+    }
+  });
+
+  // ===== Audio visualizer controls =====
+  const $audioSource = $("audioSource");
+  const $audioInput = $("audioInput");
+  const $audioInputRow = $("audioInputRow");
+  const $audioStyle = $("audioStyle");
+  const $fftSize = $("fftSize");
+  const $smoothing = $("smoothing");
+  const $sensitivity = $("sensitivity");
+  const $audioStart = $("audioStart");
+  const $audioStop = $("audioStop");
+
+  // Show/hide microphone input based on source selection
+  $audioSource.addEventListener("change", () => {
+    if ($audioSource.value === "microphone") {
+      $audioInputRow.style.display = "";
+      refreshAudioInputs();
+    } else {
+      $audioInputRow.style.display = "none";
+    }
+  });
+
+  $audioStyle.addEventListener("change", () => {
+    src.audio.style = $audioStyle.value;
+    updateAudioEffectParamsUI();
+  });
+  updateAudioEffectParamsUI(); // Initialize
+
+  // Audio palette change handler
+  const $audioPalette = $("audioPalette");
+  // Set initial value to match src.audio.palette
+  if ($audioPalette) {
+    $audioPalette.value = src.audio.palette || "rainbow";
+    $audioPalette.addEventListener("change", async () => {
+      src.audio.palette = $audioPalette.value;
+      await updatePaletteDropdowns();
+    });
+  }
+
+  const $audioPaletteGradient = $("audioPaletteGradient");
+  if ($audioPaletteGradient) {
+    $audioPaletteGradient.checked = src.audio.paletteGradient !== false;
+    $audioPaletteGradient.addEventListener("change", () => {
+      src.audio.paletteGradient = $audioPaletteGradient.checked;
+    });
+  }
+
+  // LED Mask controls
+  const $showLedMask = $("showLedMask");
+  const $maskOpacity = $("maskOpacity");
+  const $maskOpacityLabel = $("maskOpacityLabel");
+  const $maskOpacityValue = $("maskOpacityValue");
+
+  if ($showLedMask) {
+    $showLedMask.addEventListener("change", () => {
+      if ($showLedMask.checked) {
+        $maskOpacityLabel.style.display = "";
+      } else {
+        $maskOpacityLabel.style.display = "none";
+      }
+    });
+  }
+
+  if ($maskOpacity) {
+    $maskOpacity.addEventListener("input", (e) => {
+      const value = parseInt(e.target.value);
+      if ($maskOpacityValue) {
+        $maskOpacityValue.textContent = `${value}%`;
+      }
+    });
+    // Initialize display value
+    if ($maskOpacityValue) {
+      $maskOpacityValue.textContent = `${$maskOpacity.value}%`;
+    }
+  }
+
+  $fftSize.addEventListener("change", () => {
+    src.audio.fftSize = parseInt($fftSize.value, 10);
+    audioManager.updateConfig({ fftSize: src.audio.fftSize });
+  });
+  $smoothing.addEventListener("input", () => {
+    src.audio.smoothing = parseFloat($smoothing.value);
+    audioManager.updateConfig({ smoothing: src.audio.smoothing });
+  });
+  $sensitivity.addEventListener("input", () => {
+    src.audio.sensitivity = parseFloat($sensitivity.value);
+  });
+
+  async function refreshAudioInputs() {
+    try {
+      const audioDevices = await audioManager.enumerateDevices();
+      $audioInput.innerHTML = audioDevices
+        .map(
+          (d) => `<option value="${d.deviceId}">${d.label || "Input"}</option>`
+        )
+        .join("");
+      if (audioDevices.length && !src.audio.inputDeviceId)
+        src.audio.inputDeviceId = audioDevices[0].deviceId;
+      if (src.audio.inputDeviceId) $audioInput.value = src.audio.inputDeviceId;
+    } catch (e) {
+      log("enumerateDevices failed (needs permission once): " + e.message);
+    }
+  }
+  $audioInput.addEventListener(
+    "change",
+    () => (src.audio.inputDeviceId = $audioInput.value)
+  );
+
+  $audioStart.addEventListener("click", async () => {
+    try {
+      const audioSource = $audioSource.value;
+      let success = false;
+
+      // Update audio manager config
+      audioManager.updateConfig({
+        fftSize: src.audio.fftSize,
+        smoothing: src.audio.smoothing,
+        sensitivity: src.audio.sensitivity,
+      });
+
+      if (audioSource === "screen") {
+        success = await audioManager.startScreenCapture(log);
+      } else {
+        success = await audioManager.startMicrophone(
+          src.audio.inputDeviceId,
+          log
+        );
+      }
+
+      if (success) {
+        // Sync audioManager state to src.audio
+        src.audio.ctx = audioManager.ctx;
+        src.audio.analyser = audioManager.analyser;
+        src.audio.gain = audioManager.gain;
+        src.audio.srcNode = audioManager.srcNode;
+        src.audio.stream = audioManager.stream;
+        src.audio.dataFreq = audioManager.dataFreq;
+        src.audio.dataWave = audioManager.dataWave;
+      }
+    } catch (e) {
+      log("Audio start error: " + e.message);
+    }
+  });
+
+  $audioStop.addEventListener("click", () => {
+    audioManager.stop();
+    // Clear src.audio references
+    src.audio.ctx = null;
+    src.audio.analyser = null;
+    src.audio.gain = null;
+    src.audio.srcNode = null;
+    src.audio.stream = null;
+    src.audio.dataFreq = null;
+    src.audio.dataWave = null;
+    log("Audio stopped.");
+  });
+
+  // ===== Helpers =====
+  // drawFitted is imported from utils.js - no need to redefine
+
+  // ===== Devices & mapping - using module functions =====
+  // uid() and device functions are imported from deviceManager.js
+  // devices variable is initialized above
+  // Use module's renderDevicesUI with callback
+  const renderDevicesUIWrapper = () => {
+    renderDevicesUI(log, () => {
+      // Re-render after device changes
+      devices = getDevices();
+      // No need to recompute scaled mappings - using direct 1:1 mapping
+    });
+  };
+
+  // Local wrapper function (renamed to avoid conflict with imported function)
+  const renderDevicesUILocal = () => {
+    renderDevicesUIWrapper();
+  };
+
+  // Override with module version that syncs devices
+  function renderDevicesUIOriginal() {
+    const wrap = $("devices");
+    wrap.innerHTML = "";
+    devices.forEach((dev) => {
+      const card = document.createElement("div");
+      const isConnected = dev.enabled && dev.ws && dev.ws.readyState === 1;
+      card.className = `devcard ${isConnected ? "connected" : "disconnected"}`;
+      card.innerHTML = `
+      <div class="row">
+        <input id="name-${dev.id}" value="${dev.name || ""}" placeholder="Name">
+      </div>
+      <div class="row">
+        <input id="host-${dev.id}" value="${dev.host || ""}" placeholder="Host">
+        <input id="port-${dev.id}" value="${
+        dev.port || 4048
+      }" placeholder="4048">
+      </div>
+      <div class="row">
+        <button id="deviceStatus-${dev.id}" class="device-status-btn ${
+        dev.enabled && dev.ws && dev.ws.readyState === 1
+          ? "connected"
+          : "disconnected"
+      }">
+          ${
+            dev.enabled && dev.ws && dev.ws.readyState === 1
+              ? "✓ Connected & Enabled"
+              : "✗ Disconnected"
+          }
+        </button>
+        <button id="delete-${dev.id}" style="color:#a00">Delete</button>
+      </div>
+      <div class="row">
+        <button id="loadxl-${dev.id}">Load Excel/CSV</button>
+        <button id="export-${dev.id}">Export CSV</button>
+      </div>
+      <details ${dev.map?.length ? "open" : ""}>
+        <summary>Transform & Overlay</summary>
+        <label>Position X <input id="posX-${
+          dev.id
+        }" type="range" min="0" max="1" step="0.001" value="${
+        dev.posX ?? 0.5
+      }"></label>
+        <label>Position Y <input id="posY-${
+          dev.id
+        }" type="range" min="0" max="1" step="0.001" value="${
+        dev.posY ?? 0.5
+      }"></label>
+        <label>Scale <input id="scale-${
+          dev.id
+        }" type="range" min="0.2" max="3" step="0.01" value="${
+        dev.scale ?? 1
+      }"></label>
+        <div class="row">
+          <label>Rotation
+            <select id="rot-${dev.id}">
+              ${[0, 90, 180, 270]
+                .map(
+                  (v) =>
+                    `<option ${
+                      (dev.rotation || 0) === v ? "selected" : ""
+                    } value="${v}">${v}°</option>`
+                )
+                .join("")}
+            </select>
+          </label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Flip X</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="flipX-${dev.id}" ${
+        dev.flipX ? "checked" : ""
+      } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <label class="toggle-label">
+            <span class="toggle-label-text">Flip Y</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="flipY-${dev.id}" ${
+        dev.flipY ? "checked" : ""
+      } />
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Show sample points</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="show-${dev.id}" ${
+        dev.show !== false ? "checked" : ""
+      } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-label">
+          <span class="toggle-label-text">Show index labels</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="labels-${dev.id}" ${
+        dev.showLabels ? "checked" : ""
+      } />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      </details>
+    `;
+      wrap.appendChild(card);
+
+      // Hooks
+      card.querySelector(`#name-${dev.id}`).addEventListener("input", (e) => {
+        dev.name = e.target.value;
+        saveDevices();
+      });
+      card.querySelector(`#host-${dev.id}`).addEventListener("input", (e) => {
+        dev.host = e.target.value;
+        saveDevices();
+      });
+      card.querySelector(`#port-${dev.id}`).addEventListener("input", (e) => {
+        dev.port = parseInt(e.target.value || "4048", 10);
+        saveDevices();
+      });
+      // Combined connect/enable button
+      const statusBtn = card.querySelector(`#deviceStatus-${dev.id}`);
+      statusBtn.addEventListener("click", () => {
+        const isConnected = dev.enabled && dev.ws && dev.ws.readyState === 1;
+
+        if (isConnected) {
+          // Disconnect and disable
+          if (dev.ws) {
+            dev.ws.close();
+            dev.ws = null;
+          }
+          dev.enabled = false;
+        } else {
+          // Enable and connect
+          dev.enabled = true;
+          connectDevice(dev);
+        }
+        saveDevices();
+        devices = getDevices();
+        // Re-render to update UI
+        renderDevicesUILocal();
+      });
+
+      card.querySelector(`#delete-${dev.id}`).addEventListener("click", () => {
+        if (dev.ws) dev.ws.close();
+        deleteDevice(dev.id);
+        devices = getDevices();
+        saveDevices();
+        renderDevicesUILocal();
+      });
+
+      card
+        .querySelector(`#loadxl-${dev.id}`)
+        .addEventListener("click", async () => {
+          const f = await pickFile();
+          if (!f) return;
+          const buf = await f.arrayBuffer();
+          try {
+            if (
+              f.name.toLowerCase().endsWith(".csv") ||
+              f.type.includes("csv")
+            ) {
+              dev.map = parseCsvToMap(
+                new TextDecoder().decode(new Uint8Array(buf))
+              );
+            } else {
+              dev.map = parseExcelToMap(buf);
+            }
+            if (!dev.map.length) throw new Error("No mapping parsed");
+            dev.posX ??= 0.5;
+            dev.posY ??= 0.5;
+            dev.scale ??= 1;
+            dev.rotation ??= 0;
+            dev.width ??= dev.scale ?? 1;
+            dev.height ??= dev.scale ?? 1;
+            dev.flipX ??= false;
+            dev.flipY ??= false;
+            dev.show ??= true;
+            saveDevices();
+            renderDevicesUILocal();
+          } catch (err) {
+            log(`Parse error (${dev.name || dev.id}): ` + err.message);
+          }
+        });
+
+      card.querySelector(`#export-${dev.id}`).addEventListener("click", () => {
+        if (!dev.map?.length) return;
+        const rows = [
+          "index,x,y",
+          ...dev.map.map(
+            (p) => `${p.index},${p.x.toFixed(6)},${p.y.toFixed(6)}`
+          ),
+        ];
+        download(
+          `${dev.name || "device"}_map.csv`,
+          rows.join("\n"),
+          "text/csv"
+        );
+      });
+
+      ["posX", "posY", "scale"].forEach((k) => {
+        card.querySelector(`#${k}-${dev.id}`).addEventListener("input", (e) => {
+          dev[k] = parseFloat(e.target.value);
+          saveDevices();
+        });
+      });
+      card.querySelector(`#rot-${dev.id}`).addEventListener("change", (e) => {
+        dev.rotation = parseInt(e.target.value, 10);
+        saveDevices();
+      });
+      card.querySelector(`#flipX-${dev.id}`).addEventListener("change", (e) => {
+        dev.flipX = e.target.checked;
+        saveDevices();
+      });
+      card.querySelector(`#flipY-${dev.id}`).addEventListener("change", (e) => {
+        dev.flipY = e.target.checked;
+        saveDevices();
+      });
+      card.querySelector(`#show-${dev.id}`).addEventListener("change", (e) => {
+        dev.show = e.target.checked;
+        saveDevices();
+      });
+      card
+        .querySelector(`#labels-${dev.id}`)
+        .addEventListener("change", (e) => {
+          dev.showLabels = e.target.checked;
+          saveDevices();
+        });
+    });
+  }
+
+  $("addDevice").addEventListener("click", async () => {
+    const dev = addDeviceFunc(
+      $("newName").value || "Device",
+      $("newHost").value || "",
+      parseInt($("newPort").value || "4048", 10)
+    );
+    devices = getDevices();
+    saveDevices();
+
+    // Save to devices.json if checkbox is checked
+    if ($("saveToFile").checked) {
+      const result = await saveDevicesToFile();
+      if (result.success) {
+        log(`Device added and saved to devices.json`);
+      } else {
+        log(
+          `Device added, but failed to save to devices.json: ${result.error}`
+        );
+      }
+    } else {
+      log(`Device added (saved to localStorage only)`);
+    }
+
+    renderDevicesUILocal();
+  });
+
+  // Export all devices to JSON file
+  $("exportDevices").addEventListener("click", () => {
+    const json = exportDevicesToJSON();
+    download("devices_export.json", json, "application/json");
+    log(`Exported ${devices.length} device(s) to JSON`);
+  });
+
+  // Import devices from JSON file
+  $("importDevices").addEventListener("click", async () => {
+    const file = await pickFile();
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const merge = confirm(
+        "Merge with existing devices?\n" +
+          "Yes = Merge (keep existing, update matching IDs)\n" +
+          "No = Replace all devices"
+      );
+
+      const result = importDevicesFromJSON(text, { merge });
+
+      if (result.success) {
+        devices = getDevices();
+        renderDevicesUILocal();
+        log(`Imported ${result.count} device(s) from JSON`);
+      } else {
+        log(`Import failed: ${result.error}`);
+      }
+    } catch (err) {
+      log(`Import error: ${err.message}`);
+    }
+  });
+
+  // Save all devices to devices.json file
+  $("saveDevicesToFile").addEventListener("click", async () => {
+    const result = await saveDevicesToFile();
+    if (result.success) {
+      log(`Saved ${devices.length} device(s) to devices.json`);
+    } else {
+      log(`Failed to save to devices.json: ${result.error}`);
+    }
+  });
+
+  // Use module function for connectDevice
+  function connectDevice(dev) {
+    connectDeviceFunc(dev, log);
+    devices = getDevices();
+  }
+
+  // File helpers are imported from utils.js - no need to redefine
+  // pickFile and download are already imported
+
+  // parseExcelToMap and parseCsvToMap are imported from deviceManager.js module
+  // No need to redefine them here
+
+  // ===== Rendering pipeline =====
+  function renderEffect(t, w, h) {
+    return src.effectRender(t, ctx, w, h);
+  }
+  function renderVideo(w, h) {
+    if (src.video.el && src.video.el.readyState >= 2) {
+      drawFitted(
+        src.video.el.videoWidth || w,
+        src.video.el.videoHeight || h,
+        src.video.fit || "contain",
+        ctx,
+        w,
+        h,
+        (dx, dy, dw, dh) => ctx.drawImage(src.video.el, dx, dy, dw, dh)
+      );
+      return ctx.getImageData(0, 0, w, h);
+    }
+    const img = ctx.createImageData(w, h);
+    ctx.putImageData(img, 0, 0);
+    return img;
+  }
+  function renderLottie(w, h) {
+    if (src.lottie.anim && src.lottie.canvas) {
+      ctx.clearRect(0, 0, w, h);
+      drawFitted(
+        src.lottie.canvas.width,
+        src.lottie.canvas.height,
+        "stretch",
+        ctx,
+        w,
+        h,
+        (dx, dy, dw, dh) => ctx.drawImage(src.lottie.canvas, dx, dy, dw, dh)
+      );
+      return ctx.getImageData(0, 0, w, h);
+    }
+    const img = ctx.createImageData(w, h);
+    ctx.putImageData(img, 0, 0);
+    return img;
+  }
+  function renderAudio(w, h) {
+    const A = src.audio;
+    // Sync audioManager with src.audio
+    if (audioManager.analyser) {
+      A.analyser = audioManager.analyser;
+      A.dataFreq = audioManager.dataFreq;
+      A.dataWave = audioManager.dataWave;
+      A.ctx = audioManager.ctx;
+      A.stream = audioManager.stream;
+    }
+
+    // Update audio data - must be called before rendering
+    if (audioManager.analyser) {
+      // Ensure arrays are initialized
+      if (!audioManager.dataFreq || audioManager.dataFreq.length === 0) {
+        audioManager.dataFreq = new Uint8Array(
+          audioManager.analyser.frequencyBinCount
+        );
+      }
+      if (!audioManager.dataWave || audioManager.dataWave.length === 0) {
+        audioManager.dataWave = new Uint8Array(audioManager.analyser.fftSize);
+      }
+
+      audioManager.update();
+      // Ensure src.audio references are updated after audioManager.update()
+      A.dataFreq = audioManager.dataFreq;
+      A.dataWave = audioManager.dataWave;
+    }
+
+    // Use module function to render
+    return renderAudioVisualizer(
+      ctx,
+      w,
+      h,
+      {
+        analyser: A.analyser,
+        dataFreq: A.dataFreq,
+        dataWave: A.dataWave,
+        shockwaves: A.shockwaves,
+        particles: A.particles,
+      },
+      A.style,
+      A.sensitivity,
+      A.palette,
+      src.audioEffectParams,
+      A.paletteGradient
+    );
+  }
+
+  // Legacy renderAudio implementation removed - using module now
+  function renderAudioOld(w, h) {
+    const A = src.audio;
+    if (!A.analyser) {
+      const img = ctx.createImageData(w, h);
+      ctx.putImageData(img, 0, 0);
+      return img;
+    }
+    A.analyser.getByteFrequencyData(A.dataFreq);
+    A.analyser.getByteTimeDomainData(A.dataWave);
+
+    const sens = A.sensitivity;
+    // Calculate audio intensity for audio-reactive effects
+    let audioIntensity = 0;
+    if (A.dataFreq) {
+      let sum = 0;
+      for (let i = 0; i < A.dataFreq.length; i++) {
+        sum += A.dataFreq[i];
+      }
+      audioIntensity = sum / (A.dataFreq.length * 255);
+    }
+
+    ctx.clearRect(0, 0, w, h);
+    switch (A.style) {
+      case "bars": {
+        const bins = A.dataFreq.length;
+        const barW = Math.max(1, Math.floor(w / bins));
+        const spacing = barW > 1 ? 1 : 0; // Add spacing only if bars are wide enough
+        for (let i = 0; i < bins; i++) {
+          const v = (A.dataFreq[i] / 255) ** 1.2 * sens;
+          const bh = Math.max(1, Math.min(h, v * h)); // Ensure minimum height of 1px
+          const x = i * barW;
+          const y = h - bh;
+          const hue = (i / bins) * 360;
+          ctx.fillStyle = `hsl(${hue}, 80%, 55%)`;
+          ctx.fillRect(x, y, Math.max(1, barW - spacing), bh);
+        }
+        break;
+      }
+      case "wave": {
+        ctx.strokeStyle = "#00e0ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < A.dataWave.length; i++) {
+          const v = ((A.dataWave[i] - 128) / 128) * sens;
+          const x = (i / (A.dataWave.length - 1)) * w;
+          const y = h / 2 + v * (h * 0.45);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        break;
+      }
+      case "radial": {
+        const cx = w / 2,
+          cy = h / 2;
+        const R = Math.min(cx, cy) * 0.9;
+        const bins = A.dataFreq.length;
+        ctx.save();
+        ctx.translate(cx, cy);
+        for (let i = 0; i < bins; i++) {
+          const ang = (i / bins) * Math.PI * 2;
+          const v = (A.dataFreq[i] / 255) ** 1.2 * sens;
+          const r = R * (0.1 + 0.9 * v);
+          const x = Math.cos(ang) * r,
+            y = Math.sin(ang) * r;
+          ctx.strokeStyle = `hsl(${(i / bins) * 360}, 90%, 55%)`;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ang) * R * 0.2, Math.sin(ang) * R * 0.2);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+        break;
+      }
+      case "blobs": {
+        const bins = A.dataFreq.length;
+        for (let i = 0; i < bins; i++) {
+          const u = i / (bins - 1);
+          const v = (A.dataFreq[i] / 255) ** 1.6 * sens;
+          const x = Math.floor(u * w);
+          const y0 = Math.floor((1 - v) * h);
+          // vertical gradient blobs
+          const grad = ctx.createLinearGradient(x, y0, x, h);
+          grad.addColorStop(0, `hsla(${u * 360}, 90%, 60%, 0.95)`);
+          grad.addColorStop(
+            1,
+            `hsla(${(u * 360 + 120) % 360}, 90%, 40%, 0.05)`
+          );
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, y0, 2, h - y0);
+        }
+        break;
+      }
+      case "shockwave": {
+        const cx = w / 2,
+          cy = h / 2;
+        const maxRadius = Math.sqrt(cx * cx + cy * cy);
+        const bins = A.dataFreq.length;
+
+        // Calculate average bass (low frequencies) for triggering new waves
+        const bassBins = Math.floor(bins * 0.1); // First 10% of frequencies
+        let bassSum = 0;
+        for (let i = 0; i < bassBins; i++) {
+          bassSum += A.dataFreq[i];
+        }
+        const bassAvg = bassSum / bassBins;
+        const bassIntensity = (bassAvg / 255) * sens;
+
+        // Trigger new shockwave when bass is strong enough
+        if (bassIntensity > 0.3 && A.shockwaves.length < 5) {
+          const colors = [
+            { h: 0, s: 100, l: 50 }, // Red
+            { h: 60, s: 100, l: 50 }, // Yellow
+            { h: 180, s: 100, l: 50 }, // Cyan
+            { h: 240, s: 100, l: 50 }, // Blue
+            { h: 300, s: 100, l: 50 }, // Magenta
+          ];
+          const colorIdx = Math.floor(Math.random() * colors.length);
+          const color = colors[colorIdx];
+          A.shockwaves.push({
+            radius: 0,
+            opacity: 1.0,
+            color: color,
+            speed: 2 + Math.random() * 3, // Vary speed between 2-5
+          });
+        }
+
+        // Update and draw existing shockwaves
+        for (let i = A.shockwaves.length - 1; i >= 0; i--) {
+          const wave = A.shockwaves[i];
+
+          // Update wave
+          wave.radius += wave.speed;
+          wave.opacity = Math.max(0, 1 - wave.radius / maxRadius);
+
+          // Remove waves that have faded out
+          if (wave.opacity <= 0 || wave.radius > maxRadius) {
+            A.shockwaves.splice(i, 1);
+            continue;
+          }
+
+          // Draw trail (multiple rings behind the main wave)
+          const hue = wave.color.h;
+          const sat = wave.color.s;
+          const light = wave.color.l;
+          const trailLength = 5; // Number of trail rings
+          const trailSpacing = wave.speed * 2; // Distance between trail rings
+
+          // Draw trail rings from back to front
+          for (let t = trailLength; t >= 0; t--) {
+            const trailRadius = wave.radius - (trailLength - t) * trailSpacing;
+            if (trailRadius < 0) continue;
+
+            const trailOpacity = wave.opacity * (t / trailLength) * 0.4; // Fade trail
+            if (trailOpacity <= 0) continue;
+
+            const trailInnerRadius = Math.max(0, trailRadius - 10);
+            const trailOuterRadius = trailRadius + 10;
+            const trailGradient = ctx.createRadialGradient(
+              cx,
+              cy,
+              trailInnerRadius,
+              cx,
+              cy,
+              trailOuterRadius
+            );
+            trailGradient.addColorStop(
+              0,
+              `hsla(${hue}, ${sat}%, ${light}%, 0)`
+            );
+            trailGradient.addColorStop(
+              0.5,
+              `hsla(${hue}, ${sat}%, ${light}%, ${trailOpacity})`
+            );
+            trailGradient.addColorStop(
+              1,
+              `hsla(${hue}, ${sat}%, ${light}%, 0)`
+            );
+
+            ctx.fillStyle = trailGradient;
+            ctx.beginPath();
+            ctx.arc(cx, cy, trailOuterRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw trail edge
+            if (t > 0) {
+              // Skip edge for main wave (will be drawn separately)
+              ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light + 10}%, ${
+                trailOpacity * 0.6
+              })`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.arc(cx, cy, trailRadius, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+
+          // Draw the main wave as a ring (brightest)
+          const innerRadius = Math.max(0, wave.radius - 10);
+          const outerRadius = wave.radius + 10;
+          const gradient = ctx.createRadialGradient(
+            cx,
+            cy,
+            innerRadius,
+            cx,
+            cy,
+            outerRadius
+          );
+          gradient.addColorStop(0, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+          gradient.addColorStop(
+            0.5,
+            `hsla(${hue}, ${sat}%, ${light}%, ${wave.opacity * 0.8})`
+          );
+          gradient.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Draw inner edge for more definition (main wave)
+          ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light + 20}%, ${
+            wave.opacity
+          })`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, wave.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        break;
+      }
+      case "spectrumCircle": {
+        // Frequency bars arranged in a circle
+        const cx = w / 2,
+          cy = h / 2;
+        const R = Math.min(cx, cy) * 0.8;
+        const bins = A.dataFreq.length;
+        const barWidth = (Math.PI * 2 * R) / bins;
+        ctx.save();
+        ctx.translate(cx, cy);
+        for (let i = 0; i < bins; i++) {
+          const ang = (i / bins) * Math.PI * 2 - Math.PI / 2; // Start at top
+          const v = (A.dataFreq[i] / 255) ** 1.3 * sens;
+          const barLength = R * 0.3 + v * R * 0.6;
+          const hue = (i / bins) * 360;
+          ctx.fillStyle = `hsl(${hue}, 90%, ${50 + v * 30}%)`;
+          ctx.save();
+          ctx.rotate(ang);
+          ctx.fillRect(R, -barWidth / 2, barLength, barWidth);
+          ctx.restore();
+        }
+        ctx.restore();
+        break;
+      }
+      case "particles": {
+        // Particles that explode from center on bass hits
+        const cx = w / 2,
+          cy = h / 2;
+        const bins = A.dataFreq.length;
+        const bassBins = Math.floor(bins * 0.15);
+        let bassSum = 0;
+        for (let i = 0; i < bassBins; i++) {
+          bassSum += A.dataFreq[i];
+        }
+        const bassIntensity = (bassSum / bassBins / 255) * sens;
+
+        // Spawn new particles on bass hits
+        if (bassIntensity > 0.4 && A.particles.length < 200) {
+          const particleCount = Math.floor(bassIntensity * 20);
+          for (let p = 0; p < particleCount; p++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 3;
+            const hue = (bassIntensity * 360 + Math.random() * 60) % 360;
+            A.particles.push({
+              x: cx,
+              y: cy,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              life: 1.0,
+              decay: 0.01 + Math.random() * 0.02,
+              size: 2 + Math.random() * 4,
+              hue: hue,
+            });
+          }
+        }
+
+        // Update and draw particles
+        for (let i = A.particles.length - 1; i >= 0; i--) {
+          const p = A.particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.98; // Friction
+          p.vy *= 0.98;
+          p.life -= p.decay;
+
+          if (p.life <= 0 || p.x < 0 || p.x > w || p.y < 0 || p.y > h) {
+            A.particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case "pulseRings": {
+        // Concentric rings that pulse with different frequency bands
+        const cx = w / 2,
+          cy = h / 2;
+        const maxR = Math.min(cx, cy) * 0.9;
+        const bins = A.dataFreq.length;
+        const ringCount = 8;
+        const binPerRing = Math.floor(bins / ringCount);
+
+        for (let r = 0; r < ringCount; r++) {
+          let ringSum = 0;
+          for (
+            let i = r * binPerRing;
+            i < (r + 1) * binPerRing && i < bins;
+            i++
+          ) {
+            ringSum += A.dataFreq[i];
+          }
+          const ringIntensity = (ringSum / binPerRing / 255) * sens;
+          const baseRadius = (maxR / ringCount) * (r + 1);
+          const pulseRadius = baseRadius * (0.5 + ringIntensity * 0.5);
+          const hue = (r / ringCount) * 360;
+          const opacity = 0.3 + ringIntensity * 0.7;
+
+          const gradient = ctx.createRadialGradient(
+            cx,
+            cy,
+            pulseRadius - 5,
+            cx,
+            cy,
+            pulseRadius + 5
+          );
+          gradient.addColorStop(0, `hsla(${hue}, 100%, 60%, 0)`);
+          gradient.addColorStop(0.5, `hsla(${hue}, 100%, 60%, ${opacity})`);
+          gradient.addColorStop(1, `hsla(${hue}, 100%, 60%, 0)`);
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(cx, cy, pulseRadius + 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${opacity})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, pulseRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        break;
+      }
+      case "matrix": {
+        // Rain-like vertical bars that fall
+        const bins = A.dataFreq.length;
+        const columnCount = Math.floor(w / 4);
+        const binPerColumn = Math.floor(bins / columnCount);
+
+        // Draw columns from left to right
+        for (let col = 0; col < columnCount; col++) {
+          let colSum = 0;
+          for (
+            let i = col * binPerColumn;
+            i < (col + 1) * binPerColumn && i < bins;
+            i++
+          ) {
+            colSum += A.dataFreq[i];
+          }
+          const colIntensity = (colSum / binPerColumn / 255) * sens;
+          const x = (col / columnCount) * w;
+          const barHeight = h * (0.3 + colIntensity * 0.7);
+          const y = h - barHeight;
+
+          // Gradient from top to bottom
+          const grad = ctx.createLinearGradient(x, y, x, h);
+          const hue = (col / columnCount) * 360;
+          grad.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.9)`);
+          grad.addColorStop(0.5, `hsla(${hue}, 80%, 40%, 0.6)`);
+          grad.addColorStop(1, `hsla(${hue}, 60%, 30%, 0.3)`);
+
+          ctx.fillStyle = grad;
+          ctx.fillRect(x, y, 4, barHeight);
+
+          // Highlight at top
+          ctx.fillStyle = `hsla(${hue}, 100%, 70%, ${colIntensity})`;
+          ctx.fillRect(x, y, 4, 8);
+        }
+        break;
+      }
+      case "oscilloscope": {
+        // Dual waveform oscilloscope display
+        const centerY = h / 2;
+        const halfH = h * 0.4;
+
+        // Top waveform (left channel or frequency)
+        ctx.strokeStyle = "#00ff88";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < A.dataWave.length; i++) {
+          const v = ((A.dataWave[i] - 128) / 128) * sens;
+          const x = (i / (A.dataWave.length - 1)) * w;
+          const y = centerY - halfH + v * halfH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Bottom waveform (frequency data as waveform)
+        ctx.strokeStyle = "#ff0088";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const bins = A.dataFreq.length;
+        for (let i = 0; i < bins; i++) {
+          const v = (A.dataFreq[i] / 255) * sens;
+          const x = (i / (bins - 1)) * w;
+          const y = centerY + halfH - v * halfH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Center line
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(w, centerY);
+        ctx.stroke();
+
+        // Lissajous curve (XY mode)
+        ctx.strokeStyle = "#ffff00";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const centerX = w / 2;
+        const offset = Math.floor(A.dataWave.length / 4);
+        for (let i = 0; i < A.dataWave.length - offset; i++) {
+          const xv = ((A.dataWave[i] - 128) / 128) * sens;
+          const yv = ((A.dataWave[i + offset] - 128) / 128) * sens;
+          const x = centerX + xv * centerX * 0.8;
+          const y = centerY + yv * centerY * 0.8;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        break;
+      }
+      case "audioPlasma": {
+        const t = performance.now();
+        const t1 = t * 0.001;
+        const p = src.audioEffectParams.audioPlasma || {};
+        const audioBoost = 1 + audioIntensity * (p.reactiveness || 2.0);
+        const img = ctx.createImageData(w, h);
+        const d = img.data;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const u = x / w,
+              v = y / h;
+            const v1 =
+              Math.sin(u * 10 + t1 * 3 * audioBoost) +
+              Math.cos(v * 10 - t1 * 2 * audioBoost);
+            const v2 = Math.sin(u * 4 + v * 5 + t1 * 5 * audioBoost);
+            const a = (v1 + v2) * 0.5;
+            const i = (y * w + x) * 4;
+            const hueShift = ((p.colorShift || 0) * Math.PI) / 180;
+            d[i] = Math.floor(
+              128 + 127 * Math.sin(a + 0.0 + t1 * 2 + hueShift)
+            );
+            d[i + 1] = Math.floor(
+              128 +
+                127 * Math.sin(a + 2.1 + t1 * 2 + audioIntensity * 2 + hueShift)
+            );
+            d[i + 2] = Math.floor(
+              128 + 127 * Math.sin(a + 4.2 + t1 * 2 + hueShift)
+            );
+            d[i + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+        break;
+      }
+      case "audioStars": {
+        const t = performance.now();
+        const p = src.audioEffectParams.audioStars || {};
+        const reactiveness = p.reactiveness || 2.0;
+        const maxCount = p.maxCount || 500;
+        const starCount = Math.min(
+          maxCount,
+          200 + Math.floor(audioIntensity * (maxCount - 200))
+        );
+        const t1 = t * 0.0005 * (1 + audioIntensity * reactiveness);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, w, h);
+        for (let s = 0; s < starCount; s++) {
+          const seed = s * 123.456;
+          const x = (Math.sin(seed) * 0.5 + 0.5) * w;
+          const y = (Math.cos(seed * 2) * 0.5 + 0.5) * h;
+          const z = (Math.sin(seed * 3) * 0.5 + 0.5) * 100 + 50;
+          const speed =
+            (0.1 + (s % 3) * 0.05) * (1 + audioIntensity * reactiveness);
+          const starZ = (z + t1 * speed * 100) % 100;
+          if (starZ > 0 && starZ < 100) {
+            const size = (100 - starZ) / 100;
+            const px = (x / starZ) * 100;
+            const py = (y / starZ) * 100;
+            if (px >= 0 && px < w && py >= 0 && py < h) {
+              const brightness = Math.min(
+                255,
+                255 * size * (1 + audioIntensity)
+              );
+              const hue = (audioIntensity * 360 + s * 10) % 360;
+              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${brightness / 255})`;
+              ctx.beginPath();
+              ctx.arc(px, py, size * 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        break;
+      }
+      case "audioWaves": {
+        const t = performance.now();
+        const p = src.audioEffectParams.audioWaves || {};
+        const reactiveness = p.reactiveness || 3.0;
+        const colorSpeed = p.colorSpeed || 1.0;
+        const t1 = t * 0.001;
+        const audioBoost = 1 + audioIntensity * reactiveness;
+        const img = ctx.createImageData(w, h);
+        const d = img.data;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const u = x / w,
+              v = y / h;
+            const wave1 =
+              Math.sin((u * 5 + t1 * 2 * audioBoost) * Math.PI * 2) * 0.5 + 0.5;
+            const wave2 =
+              Math.sin((v * 3 - t1 * 1.5 * audioBoost) * Math.PI * 2) * 0.5 +
+              0.5;
+            const wave3 =
+              Math.sin(((u + v) * 4 + t1 * 3 * audioBoost) * Math.PI * 2) *
+                0.5 +
+              0.5;
+            const combined = (wave1 + wave2 + wave3) / 3;
+            const i = (y * w + x) * 4;
+            const hue =
+              (combined * 360 + t1 * 50 * colorSpeed + audioIntensity * 180) %
+              360;
+            const rgb = hslToRgb(hue / 360, 0.8, 0.3 + audioIntensity * 0.4);
+            d[i] = rgb[0];
+            d[i + 1] = rgb[1];
+            d[i + 2] = rgb[2];
+            d[i + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+        break;
+      }
+      case "audioSpiral": {
+        const t = performance.now();
+        const p = src.audioEffectParams.audioSpiral || {};
+        const reactiveness = p.reactiveness || 2.0;
+        const arms = p.arms || 5;
+        const t1 = t * 0.001;
+        const audioBoost = 1 + audioIntensity * reactiveness;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const maxR = Math.min(centerX, centerY);
+        const img = ctx.createImageData(w, h);
+        const d = img.data;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const r = Math.sqrt(dx * dx + dy * dy) / maxR;
+            const angle = Math.atan2(dy, dx);
+            const spiral =
+              (angle + Math.PI) / (Math.PI * 2) +
+              r * arms +
+              t1 * 2 * audioBoost;
+            const pattern = Math.sin(spiral * Math.PI * 4) * 0.5 + 0.5;
+            const i = (y * w + x) * 4;
+            const hue =
+              (pattern * 360 + r * 180 + t1 * 50 + audioIntensity * 120) % 360;
+            const rgb = hslToRgb(
+              hue / 360,
+              0.8,
+              0.3 + (r + audioIntensity) * 0.4
+            );
+            d[i] = rgb[0];
+            d[i + 1] = rgb[1];
+            d[i + 2] = rgb[2];
+            d[i + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+        break;
+      }
+    }
+    return ctx.getImageData(0, 0, w, h);
+  }
+
+  // ===== Per-device transforms / overlay =====
+  function applyTransformTo(dev) {
+    const W = canvas.width,
+      H = canvas.height;
+    const posX = dev.posX ?? 0.5,
+      posY = dev.posY ?? 0.5;
+    const scale = dev.scale ?? 1;
+    // Use width/height if specified, otherwise use scale for both
+    const width = dev.width ?? scale;
+    const height = dev.height ?? scale;
+    const rotDeg = dev.rotation || 0;
+    const flipX = dev.flipX ? -1 : 1,
+      flipY = dev.flipY ? -1 : 1;
+    const ang = (rotDeg * Math.PI) / 180;
+    const cosA = Math.cos(ang),
+      sinA = Math.sin(ang);
+    const out = [];
+    for (const p of dev.map || []) {
+      let x = p.x - 0.5,
+        y = p.y - 0.5;
+      x *= flipX;
+      y *= flipY;
+      const xr = x * cosA - y * sinA;
+      const yr = x * sinA + y * cosA;
+      // Apply independent width and height scaling
+      const xs = xr * width,
+        ys = yr * height;
+      const xn = posX + xs,
+        yn = posY + ys;
+      const px = Math.max(0, Math.min(W - 1, Math.round(xn * (W - 1))));
+      const py = Math.max(0, Math.min(H - 1, Math.round(yn * (H - 1))));
+      out.push([px, py]);
+    }
+    return out;
+  }
+
+  // Apply LED mask to show colors at LED positions (display only)
+  function applyLedMask(w, h) {
+    // Get current canvas image data to sample colors from
+    const canvasImg = ctx.getImageData(0, 0, w, h);
+    const canvasData = canvasImg.data;
+
+    // Get mask opacity from slider (0-100, convert to 0-1 for rgba)
+    const opacityValue = $("maskOpacity")
+      ? parseInt($("maskOpacity").value)
+      : 90;
+    const maskOpacity = opacityValue / 100;
+
+    // Darken the entire canvas first (adjustable opacity)
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = `rgba(0, 0, 0, ${maskOpacity})`; // Darken non-LED areas (adjustable)
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+
+    // Draw LED colors at their positions
+    ctx.save();
+    devices.forEach((dev) => {
+      // Only show LED mask for connected devices
+      if (
+        !dev.enabled ||
+        !dev.ws ||
+        dev.ws.readyState !== 1 ||
+        !dev.map?.length
+      )
+        return;
+
+      const canvasPts = applyTransformTo(dev);
+      const ledRadius = 5; // Radius around each LED to show color
+
+      for (const [x, y] of canvasPts) {
+        const px = Math.round(x);
+        const py = Math.round(y);
+
+        // Sample color from canvas at LED position
+        if (px >= 0 && px < w && py >= 0 && py < h) {
+          const idx = (py * w + px) * 4;
+          const r = canvasData[idx];
+          const g = canvasData[idx + 1];
+          const b = canvasData[idx + 2];
+
+          // Draw a circle with the sampled color, fading at edges
+          const gradient = ctx.createRadialGradient(
+            px,
+            py,
+            0,
+            px,
+            py,
+            ledRadius
+          );
+          gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1)`);
+          gradient.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.8)`);
+          gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(px, py, ledRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Draw a small bright dot at the center to make LED position clear
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    });
+    ctx.restore();
+  }
+
+  // Transform mapping to source frame coordinates (for sampling from ColorSource)
+  function applyTransformToSource(dev, mapping, sourceW, sourceH) {
+    const posX = dev.posX ?? 0.5,
+      posY = dev.posY ?? 0.5;
+    const scale = dev.scale ?? 1;
+    const width = dev.width ?? scale;
+    const height = dev.height ?? scale;
+    const rotDeg = dev.rotation || 0;
+    const flipX = dev.flipX ? -1 : 1,
+      flipY = dev.flipY ? -1 : 1;
+    const ang = (rotDeg * Math.PI) / 180;
+    const cosA = Math.cos(ang),
+      sinA = Math.sin(ang);
+    const out = [];
+    for (const p of mapping || []) {
+      let x = p.x - 0.5,
+        y = p.y - 0.5;
+      x *= flipX;
+      y *= flipY;
+      const xr = x * cosA - y * sinA;
+      const yr = x * sinA + y * cosA;
+      const xs = xr * width,
+        ys = yr * height;
+      const xn = posX + xs,
+        yn = posY + ys;
+      const px = Math.max(
+        0,
+        Math.min(sourceW - 1, Math.round(xn * (sourceW - 1)))
+      );
+      const py = Math.max(
+        0,
+        Math.min(sourceH - 1, Math.round(yn * (sourceH - 1)))
+      );
+      out.push([px, py]);
+    }
+    return out;
+  }
+  function drawOverlayFor(dev, pts) {
+    if (!dev.show) return;
+    // Don't show sample points if device is not connected
+    if (!dev.enabled || !dev.ws || dev.ws.readyState !== 1) return;
+    ctx.save();
+
+    // Make points more visible when screen capture is active (for dragging)
+    const isScreenCapture =
+      activeColorSource === screenSource && activeColorSource.isActive;
+    const pointSize = isScreenCapture ? 4 : 2;
+    const pointRadius = isScreenCapture ? 6 : 1;
+
+    ctx.globalCompositeOperation = "lighter";
+
+    // Draw point circles with outline for better visibility
+    for (const [x, y] of pts) {
+      // Outer circle (outline)
+      if (isScreenCapture) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.beginPath();
+        ctx.arc(x, y, pointRadius + 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Inner circle (point)
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(x, y, pointRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (dev.showLabels) {
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffd400";
+      ctx.font = isScreenCapture ? "12px system-ui" : "10px system-ui";
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < pts.length; i++) {
+        const [x, y] = pts[i];
+        const label = String(dev.map[i]?.index ?? i + 1);
+        // Draw text with outline for better visibility
+        if (isScreenCapture) {
+          ctx.strokeText(label, x, y);
+        }
+        ctx.fillText(label, x, y);
+      }
+    }
+
+    // Draw transform handles when screen capture is active
+    if (isScreenCapture) {
+      const bbox = getBoundingBox(pts);
+      if (bbox) {
+        const handles = getTransformHandles(bbox);
+        drawTransformHandles(ctx, handles);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // ===== Main loop =====
+  let lastSend = 0;
+  let animationFrameId = null;
+  let intervalId = null;
+  let isTabVisible = true;
+  let lastTime = performance.now();
+  let wakeLock = null;
+
+  // Try to acquire Wake Lock (prevents device from sleeping)
+  async function acquireWakeLock() {
+    if ("wakeLock" in navigator) {
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+          console.log("Wake Lock released");
+        });
+        console.log("Wake Lock acquired - device will stay awake");
+      } catch (err) {
+        console.warn("Wake Lock not available:", err.message);
+      }
+    }
+  }
+
+  // Release Wake Lock
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock
+        .release()
+        .then(() => {
+          wakeLock = null;
+          console.log("Wake Lock released manually");
+        })
+        .catch((err) => {
+          console.warn("Error releasing Wake Lock:", err);
+        });
+    }
+  }
+
+  // Re-acquire Wake Lock if it was released (e.g., when tab becomes visible again)
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && wakeLock === null) {
+      await acquireWakeLock();
+    }
+  });
+
+  // Try to acquire Wake Lock on page load
+  acquireWakeLock();
+
+  // Handle page visibility changes
+  document.addEventListener("visibilitychange", () => {
+    isTabVisible = !document.hidden;
+
+    if (isTabVisible) {
+      // Tab is visible - use requestAnimationFrame
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (!animationFrameId) {
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(tick);
+      }
+    } else {
+      // Tab is hidden - use setInterval to keep running
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      if (!intervalId) {
+        const fps = Math.max(1, parseInt($("fps").value || "30", 10));
+        const interval = 1000 / fps;
+        lastTime = performance.now();
+        intervalId = setInterval(() => {
+          tick(performance.now());
+        }, interval);
+      }
+    }
+
+    // Ensure AudioContext stays active
+    if (audioManager.ctx) {
+      if (audioManager.ctx.state === "suspended") {
+        audioManager.ctx.resume().catch((err) => {
+          console.warn("Failed to resume AudioContext:", err);
+        });
+      }
+    }
+  });
+
+  function tick(t) {
+    const fps = Math.max(1, parseInt($("fps").value || "30", 10));
+    const minDt = 1000 / fps;
+    const w = canvas.width,
+      h = canvas.height;
+
+    // Use performance.now() for consistent timing regardless of tab visibility
+    const currentTime = performance.now();
+    lastTime = currentTime;
+
+    // Render to canvas - show screen capture on main canvas if active, otherwise show effects
+    let img;
+    if (activeColorSource === screenSource && activeColorSource.isActive) {
+      // Draw screen capture directly to main canvas
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
+
+      if (screenSource.video && screenSource.video.readyState >= 2) {
+        const videoWidth = screenSource.video.videoWidth;
+        const videoHeight = screenSource.video.videoHeight;
+
+        if (videoWidth > 0 && videoHeight > 0) {
+          // Fill canvas completely (cover mode) - may crop but ensures mapping aligns
+          const videoAspect = videoWidth / videoHeight;
+          const canvasAspect = w / h;
+
+          let drawWidth, drawHeight, drawX, drawY;
+
+          if (videoAspect > canvasAspect) {
+            // Video is wider - fill height, crop width (centered)
+            drawWidth = h * videoAspect;
+            drawHeight = h;
+            drawX = (w - drawWidth) / 2;
+            drawY = 0;
+          } else {
+            // Video is taller - fill width, crop height (centered)
+            drawWidth = w;
+            drawHeight = w / videoAspect;
+            drawX = 0;
+            drawY = (h - drawHeight) / 2;
+          }
+
+          ctx.drawImage(
+            screenSource.video,
+            drawX,
+            drawY,
+            drawWidth,
+            drawHeight
+          );
+        }
+      }
+
+      // Get ImageData from canvas for sampling
+      img = ctx.getImageData(0, 0, w, h);
+    } else {
+      // Render normal effects/visualizations
+      switch (src.type) {
+        case "effect":
+          img = renderEffect(currentTime, w, h);
+          break;
+        case "video":
+          img = renderVideo(w, h);
+          break;
+        case "lottie":
+          img = renderLottie(w, h);
+          break;
+        case "audio":
+          img = renderAudio(w, h);
+          break;
+        default:
+          img = ctx.createImageData(w, h);
+          ctx.putImageData(img, 0, 0);
+      }
+    }
+
+    // Draw image to canvas first
+    ctx.putImageData(img, 0, 0);
+
+    // Apply LED mask if enabled (only affects display, not sampling)
+    if ($("showLedMask") && $("showLedMask").checked) {
+      applyLedMask(w, h);
+    }
+
+    // Get frame data from active color source for sampling
+    // Note: When screen capture is active, we display it on canvas but sample from the actual capture frame
+    // to maintain proper scaling based on capture resolution
+    let srcData = null;
+    let sourceWidth = w;
+    let sourceHeight = h;
+
+    if (activeColorSource && activeColorSource.isActive) {
+      const sourceFrame = activeColorSource.getFrame();
+      if (sourceFrame) {
+        srcData = sourceFrame.data;
+        sourceWidth = sourceFrame.width;
+        sourceHeight = sourceFrame.height;
+      } else {
+        // Fallback to canvas if source frame not available
+        srcData = img.data;
+        sourceWidth = w;
+        sourceHeight = h;
+      }
+    } else {
+      // No active source, use canvas
+      srcData = img.data;
+      sourceWidth = w;
+      sourceHeight = h;
+    }
+
+    if (currentTime - lastSend >= minDt) {
+      devices.forEach((dev) => {
+        if (
+          !dev.enabled ||
+          !dev.ws ||
+          dev.ws.readyState !== 1 ||
+          !dev.map?.length ||
+          !srcData
+        )
+          return;
+
+        // Transform mapping to source frame coordinates
+        // For screen capture: map canvas coordinates directly to screen capture (1:1)
+        // For canvas source: use canvas dimensions
+        let pts;
+        if (activeColorSource === screenSource && activeColorSource.isActive) {
+          // Screen capture: transform to canvas coordinates first, then map 1:1 to screen capture frame
+          // Get canvas coordinates (where points are displayed)
+          const canvasPts = applyTransformTo(dev);
+
+          // Map canvas coordinates (0-w, 0-h) directly to screen capture frame (0-sourceWidth, 0-sourceHeight)
+          // This is a 1:1 mapping - canvas position = screen capture position
+          pts = canvasPts.map(([cx, cy]) => {
+            // Convert canvas pixel to normalized (0-1)
+            const normX = cx / w;
+            const normY = cy / h;
+            // Map directly to screen capture frame (1:1)
+            const px = Math.max(
+              0,
+              Math.min(sourceWidth - 1, Math.round(normX * (sourceWidth - 1)))
+            );
+            const py = Math.max(
+              0,
+              Math.min(sourceHeight - 1, Math.round(normY * (sourceHeight - 1)))
+            );
+            return [px, py];
+          });
+        } else {
+          // Canvas source: apply transforms to base mapping using canvas dimensions
+          pts = applyTransformToSource(dev, dev.map, w, h);
+        }
+
+        // Draw overlay on main canvas (using canvas coordinates for display)
+        const canvasPts = applyTransformTo(dev);
+        drawOverlayFor(dev, canvasPts);
+
+        const rgb = new Uint8Array(pts.length * 3);
+
+        // Sample radius for area sampling (0 = point sample, 1+ = area average)
+        const sampleRadius =
+          dev.sampleRadius !== undefined ? dev.sampleRadius : 1;
+
+        let j = 0;
+        for (const [x, y] of pts) {
+          let r = 0,
+            g = 0,
+            b = 0,
+            count = 0;
+
+          if (sampleRadius <= 0) {
+            // Point sampling (original method)
+            const i = (y * sourceWidth + x) * 4;
+            if (i >= 0 && i < srcData.length - 3) {
+              r = srcData[i];
+              g = srcData[i + 1];
+              b = srcData[i + 2];
+            }
+          } else {
+            // Area sampling - average pixels in a small area
+            const radius = Math.round(sampleRadius);
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const sx = Math.max(0, Math.min(sourceWidth - 1, x + dx));
+                const sy = Math.max(0, Math.min(sourceHeight - 1, y + dy));
+                const distSq = dx * dx + dy * dy;
+                const maxDistSq = radius * radius;
+
+                // Use circular sampling (exclude corners if radius > 1)
+                if (distSq <= maxDistSq) {
+                  const i = (sy * sourceWidth + sx) * 4;
+                  if (i >= 0 && i < srcData.length - 3) {
+                    // Weight by distance (closer pixels have more weight)
+                    const weight = 1.0 - distSq / (maxDistSq + 1);
+                    r += srcData[i] * weight;
+                    g += srcData[i + 1] * weight;
+                    b += srcData[i + 2] * weight;
+                    count += weight;
+                  }
+                }
+              }
+            }
+
+            // Normalize by total weight
+            if (count > 0) {
+              r = Math.round(r / count);
+              g = Math.round(g / count);
+              b = Math.round(b / count);
+            } else {
+              // Fallback to point sample
+              const i = (y * sourceWidth + x) * 4;
+              if (i >= 0 && i < srcData.length - 3) {
+                r = srcData[i];
+                g = srcData[i + 1];
+                b = srcData[i + 2];
+              }
+            }
+          }
+
+          rgb[j++] = Math.max(0, Math.min(255, r));
+          rgb[j++] = Math.max(0, Math.min(255, g));
+          rgb[j++] = Math.max(0, Math.min(255, b));
+        }
+        dev.ws.send(rgb);
+      });
+      lastSend = currentTime;
+    } else {
+      devices.forEach((dev) => {
+        // Only show overlay for connected devices
+        if (
+          dev.enabled &&
+          dev.ws &&
+          dev.ws.readyState === 1 &&
+          dev.map?.length
+        ) {
+          const pts = applyTransformTo(dev);
+          drawOverlayFor(dev, pts);
+        }
+      });
+    }
+
+    // Continue animation loop only if tab is visible
+    if (isTabVisible) {
+      animationFrameId = requestAnimationFrame(tick);
+    }
+  }
+
+  // Start the animation loop
+  animationFrameId = requestAnimationFrame(tick);
+
+  // Keep AudioContext alive when tab is hidden
+  setInterval(() => {
+    if (audioManager.ctx && audioManager.ctx.state === "suspended") {
+      audioManager.ctx.resume().catch((err) => {
+        console.warn("Failed to resume AudioContext:", err);
+      });
+    }
+  }, 1000);
+</script>

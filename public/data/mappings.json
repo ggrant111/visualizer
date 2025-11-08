@@ -1,0 +1,44 @@
+{
+  "templates": {
+    "linear_strip": {
+      "name": "Linear LED Strip",
+      "description": "Single row of LEDs",
+      "count": 50,
+      "pattern": "linear",
+      "map": []
+    },
+    "grid_10x10": {
+      "name": "10x10 Grid",
+      "description": "Square grid of LEDs",
+      "count": 100,
+      "pattern": "grid",
+      "map": []
+    },
+    "circle": {
+      "name": "Circle",
+      "description": "Circular arrangement of LEDs",
+      "count": 60,
+      "pattern": "circle",
+      "map": []
+    },
+    "matrix_16x16": {
+      "name": "16x16 Matrix",
+      "description": "Square matrix display",
+      "count": 256,
+      "pattern": "grid",
+      "map": []
+    }
+  },
+  "formats": {
+    "csv": {
+      "headers": ["index", "x", "y"],
+      "description": "CSV format with index, x (0-1), y (0-1) columns"
+    },
+    "excel": {
+      "sheets": ["Mapping"],
+      "columns": ["index", "x", "y"],
+      "description": "Excel file with index, x, y columns"
+    }
+  }
+}
+

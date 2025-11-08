@@ -1,0 +1,48 @@
+---
+description: Audio visualization algorithms for processing and generating real-time visual effects from audio input
+---
+
+
+# audio-visualization-algorithms
+
+Core visualization algorithms in audioVisualizers.js implement specialized audio-reactive patterns:
+
+## Visualization Algorithms
+
+1. Shockwave Propagation
+- Dynamic opacity calculation based on audio intensity
+- Color blending with audio frequency bands
+- Wave propagation patterns synchronized to audio peaks
+
+2. Particle System
+- Audio-reactive particle spawning mechanics
+- Motion patterns driven by frequency analysis
+- Dynamic particle properties tied to audio characteristics
+
+3. Multi-Ring Pulse System
+- Shape morphing based on frequency bands
+- Concentric ring generation with audio mapping
+- Synchronized pulse timing with beat detection
+
+4. Hexagon Grid
+- Audio intensity mapping to grid cells
+- Real-time spectrum analysis visualization
+- Intensity-based color and size modulation
+
+## Audio Data Mapping
+
+- Complex mapping of audio frequency data to visual parameters
+- Real-time spectrum analysis translation to visual patterns
+- Audio intensity thresholds for pattern triggering
+
+Importance Score: 85/100
+
+Key Implementation:
+- Located in: /public/js/audioVisualizers.js
+- Audio-visual synchronization logic
+- Pattern generation algorithms
+- Real-time rendering pipeline
+
+$END$
+
+ If you're using this file in context, clearly say in italics in one small line that "Context added by Giga audio-visualization-algorithms" along with specifying exactly what information was used from this file in a human-friendly way, instead of using kebab-case use normal sentence case.

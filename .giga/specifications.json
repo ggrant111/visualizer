@@ -1,0 +1,22 @@
+[
+  {
+    "fileName": "main-overview.mdc",
+    "description": "Complete system overview covering the audio-reactive LED visualization architecture, component interactions, and data flow between audio processing, visualization, and LED control systems"
+  },
+  {
+    "fileName": "audio-visualization-algorithms.mdc",
+    "description": "Detailed documentation of the core visualization algorithms including frequency analysis, particle systems, and real-time rendering techniques implemented in audioVisualizers.js"
+  },
+  {
+    "fileName": "audio-processing-pipeline.mdc",
+    "description": "Technical documentation of the audio capture, analysis, and processing pipeline including frequency extraction, waveform analysis, and intensity calculation algorithms"
+  },
+  {
+    "fileName": "effect-generation-system.mdc",
+    "description": "Comprehensive documentation of procedural effect generation algorithms, pattern systems, and audio-reactive modulation implementations from effectVisualizers.js"
+  },
+  {
+    "fileName": "led-mapping-system.mdc",
+    "description": "Technical specification of the LED mapping coordinate system, transformation algorithms, and WebSocket-based control protocol implementation"
+  }
+]
