@@ -637,10 +637,37 @@ export function generateMappingFromTemplate(templateName, options = {}) {
       count: options.count || 100,
       rows: options.rows || null,
       rowCounts: options.rowCounts || null, // Array of LED counts per row
+      wiring: options.wiring || "linear", // "linear" or "serpentine"
+      startPosition: options.startPosition || "top-left", // "top-left", "top-right", "bottom-left", "bottom-right"
       pattern: "grid",
-      generate: (count, rows, rowCounts) => {
+      generate: (count, rows, rowCounts, wiring, startPosition) => {
         const map = [];
         let currentIndex = 1;
+
+        // Helper function to transform coordinates based on start position
+        const transformCoords = (x, y, maxX, maxY) => {
+          let finalX = x;
+          let finalY = y;
+
+          // Apply start position transformation
+          switch (startPosition) {
+            case "top-left":
+              // No transformation needed (default)
+              break;
+            case "top-right":
+              finalX = maxX - x;
+              break;
+            case "bottom-left":
+              finalY = maxY - y;
+              break;
+            case "bottom-right":
+              finalX = maxX - x;
+              finalY = maxY - y;
+              break;
+          }
+
+          return { x: finalX, y: finalY };
+        };
 
         if (
           rows &&
@@ -652,26 +679,63 @@ export function generateMappingFromTemplate(templateName, options = {}) {
           const numRows = Math.min(rows, rowCounts.length);
           const maxLedsPerRow = Math.max(...rowCounts);
 
+          // First, collect all positions in logical order
+          const positions = [];
           for (let row = 0; row < numRows; row++) {
             const ledsInRow = rowCounts[row] || rowCounts[0] || 10;
+            const isSerpentineRow = wiring === "serpentine" && row % 2 === 1;
+            
+            // Determine column iteration order
+            const colIndices = [];
             for (let col = 0; col < ledsInRow; col++) {
-              map.push({
-                index: currentIndex++,
-                x: col / (maxLedsPerRow - 1 || 1),
-                y: row / (numRows - 1 || 1),
-              });
+              colIndices.push(col);
             }
+            if (isSerpentineRow) {
+              colIndices.reverse(); // Reverse for serpentine rows
+            }
+
+            for (const col of colIndices) {
+              const normalizedX = col / (maxLedsPerRow - 1 || 1);
+              const normalizedY = row / (numRows - 1 || 1);
+              positions.push({ x: normalizedX, y: normalizedY });
+            }
+          }
+
+          // Assign indices and apply coordinate transformation
+          for (const pos of positions) {
+            const transformed = transformCoords(pos.x, pos.y, 1.0, 1.0);
+            map.push({
+              index: currentIndex++,
+              x: transformed.x,
+              y: transformed.y,
+            });
           }
         } else {
           // Auto-generate square grid
           const size = Math.ceil(Math.sqrt(count));
+          const positions = [];
+          
           for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size && currentIndex <= count; x++) {
-              map.push({
-                index: currentIndex++,
-                x: x / (size - 1 || 1),
-                y: y / (size - 1 || 1),
-              });
+            const isSerpentineRow = wiring === "serpentine" && y % 2 === 1;
+            const xIndices = [];
+            for (let x = 0; x < size; x++) {
+              xIndices.push(x);
+            }
+            if (isSerpentineRow) {
+              xIndices.reverse();
+            }
+            
+            for (const x of xIndices) {
+              if (currentIndex <= count) {
+                const normalizedX = x / (size - 1 || 1);
+                const normalizedY = y / (size - 1 || 1);
+                const transformed = transformCoords(normalizedX, normalizedY, 1.0, 1.0);
+                map.push({
+                  index: currentIndex++,
+                  x: transformed.x,
+                  y: transformed.y,
+                });
+              }
             }
           }
         }
@@ -725,7 +789,13 @@ export function generateMappingFromTemplate(templateName, options = {}) {
   if (templateName === "circle") {
     return template.generate(template.count, template.segments);
   } else if (templateName === "grid") {
-    return template.generate(template.count, template.rows, template.rowCounts);
+    return template.generate(
+      template.count,
+      template.rows,
+      template.rowCounts,
+      template.wiring,
+      template.startPosition
+    );
   } else {
     return template.generate(template.count);
   }

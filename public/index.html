@@ -865,12 +865,57 @@
             color: #fff;
             border: 1px solid #555;
             border-radius: 4px;
+            margin-bottom: 10px;
           "
         />
-        <small style="color: #aaa; display: block; margin-top: 4px"
+        <small style="color: #aaa; display: block; margin-top: 4px; margin-bottom: 10px"
           >Enter LED count for each row (e.g., "50,50,50" for 3 rows with 50
           LEDs each, or "50" for all rows)</small
+        />
+        <label style="display: block; margin-bottom: 8px"
+          >Wiring Pattern:</label
         >
+        <select
+          id="gridWiring"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            margin-bottom: 10px;
+          "
+        >
+          <option value="linear">Linear (left-to-right each row)</option>
+          <option value="serpentine">Serpentine (zigzag pattern)</option>
+        </select>
+        <small style="color: #aaa; display: block; margin-top: 4px; margin-bottom: 10px"
+          >Linear: Each row goes left-to-right. Serpentine: Alternating rows reverse direction (zigzag).</small
+        />
+        <label style="display: block; margin-bottom: 8px"
+          >First LED Position:</label
+        >
+        <select
+          id="gridStartPosition"
+          style="
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            margin-bottom: 10px;
+          "
+        >
+          <option value="top-left">Top Left</option>
+          <option value="top-right">Top Right</option>
+          <option value="bottom-left">Bottom Left</option>
+          <option value="bottom-right">Bottom Right</option>
+        </select>
+        <small style="color: #aaa; display: block; margin-top: 4px"
+          >Where the first LED (index 1) is located on the matrix.</small
+        />
       </div>
 
       <div
@@ -3618,10 +3663,14 @@
             : rowCounts.slice(0, rows);
 
         const totalCount = finalRowCounts.reduce((a, b) => a + b, 0);
+        const wiring = $("gridWiring").value || "linear";
+        const startPosition = $("gridStartPosition").value || "top-left";
         map = generateMappingFromTemplate("grid", {
           count: totalCount,
           rows,
           rowCounts: finalRowCounts,
+          wiring: wiring,
+          startPosition: startPosition,
         });
       }
 

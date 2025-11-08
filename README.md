@@ -27,7 +27,7 @@ A powerful web-based real-time audio visualization system that streams visual ef
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/visualizer.git
+   git clone https://github.com/ggrant111/visualizer.git
    cd visualizer
    ```
 
@@ -147,10 +147,23 @@ Quick start templates for common layouts:
 2. Select a template:
 
    - **linear_strip**: Single horizontal row of LEDs
-   - **grid**: Square grid layout (auto-calculates size)
+   - **grid/matrix**: Grid or matrix layout with configurable wiring and start position
    - **circle**: Circular arrangement of LEDs
 
-3. **Customize LED count** (optional):
+3. **For Grid/Matrix templates**, configure:
+
+   - **Number of Rows**: Total number of rows in the matrix
+   - **LEDs per Row**: Comma-separated list (e.g., "50,50,50") or single number for all rows
+   - **Wiring Pattern**:
+     - **Linear**: Each row goes left-to-right (standard wiring)
+     - **Serpentine**: Alternating rows reverse direction (zigzag pattern, common in LED matrices)
+   - **First LED Position**: Where LED index 1 is located
+     - **Top Left**: First LED at top-left corner (default)
+     - **Top Right**: First LED at top-right corner
+     - **Bottom Left**: First LED at bottom-left corner
+     - **Bottom Right**: First LED at bottom-right corner
+
+4. **Customize LED count** (optional):
    - Format: `template:count` (e.g., `linear_strip:100`, `grid:256`, `circle:60`)
    - If not specified, uses default count from template
 
